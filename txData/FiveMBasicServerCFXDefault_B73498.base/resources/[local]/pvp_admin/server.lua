@@ -115,7 +115,7 @@ end, true) -- true = commande réservée aux admins
 
 
 -- /myid : Permet à N'IMPORTE QUEL joueur de voir son propre ID
-RegisterCommand('myid', function(source, args)
+RegisterCommand('id', function(source, args)
     local playerId = source
     TriggerClientEvent('chat:addMessage', playerId, {
         color = {0, 200, 255},

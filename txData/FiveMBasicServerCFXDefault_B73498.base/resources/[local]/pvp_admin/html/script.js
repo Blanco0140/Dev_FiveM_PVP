@@ -9,8 +9,14 @@ window.addEventListener('message', function(event) {
     const data = event.data;
 
     if (data.type === 'open') {
-        // Ouvre le menu et affiche les joueurs
+        // Ouvre le menu et affiche les joueurs (ou "chargement" si vide)
         document.getElementById('player-menu').classList.remove('hidden');
+        allPlayers = data.players || [];
+        renderPlayers(allPlayers);
+    }
+
+    if (data.type === 'update') {
+        // Met à jour la liste des joueurs sans fermer/rouvrir le menu
         allPlayers = data.players || [];
         renderPlayers(allPlayers);
     }

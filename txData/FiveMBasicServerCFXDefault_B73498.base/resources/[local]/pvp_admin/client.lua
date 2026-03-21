@@ -48,9 +48,11 @@ RegisterCommand('playermenu', function()
         SetNuiFocus(false, false)
         SendNUIMessage({ type = 'close' })
     else
-        -- Ouvrir le menu et demander la liste des joueurs au serveur
+        -- Ouvrir le menu immédiatement (affiche "Chargement...")
         menuOpen = true
         SetNuiFocus(true, true)
+        SendNUIMessage({ type = 'open', players = {} })
+        -- Puis demander la liste des joueurs au serveur
         TriggerServerEvent('pvp_admin:requestPlayers')
     end
 end, true) -- admin seulement
@@ -58,13 +60,15 @@ end, true) -- admin seulement
 -- Lier F9 au menu
 RegisterKeyMapping('playermenu', 'Ouvrir le menu des joueurs', 'keyboard', 'F9')
 
--- Quand on reçoit la liste des joueurs du serveur
+-- Quand on reçoit la liste des joueurs du serveur, on met à jour le menu
 RegisterNetEvent('pvp_admin:receivePlayers')
 AddEventHandler('pvp_admin:receivePlayers', function(playerList)
-    SendNUIMessage({
-        type = 'open',
-        players = playerList
-    })
+    if menuOpen then
+        SendNUIMessage({
+            type = 'update',
+            players = playerList
+        })
+    end
 end)
 
 -- Quand le joueur ferme le menu via le bouton X ou Echap
@@ -78,11 +82,12 @@ end)
 RegisterNUICallback('action', function(data, cb)
     -- Exécute la commande correspondante
     ExecuteCommand(data.command)
-    -- Rafraîchit la liste
+    -- Rafraîchit la liste après un petit délai
     Citizen.Wait(500)
     TriggerServerEvent('pvp_admin:requestPlayers')
     cb('ok')
 end)
+
 
 
 

@@ -5,7 +5,7 @@
 let allPlayers = [];
 
 // Écoute les messages envoyés depuis le script Lua (client.lua)
-window.addEventListener('message', function(event) {
+window.addEventListener('message', function (event) {
     const data = event.data;
 
     if (data.type === 'open') {
@@ -27,7 +27,7 @@ window.addEventListener('message', function(event) {
 });
 
 // Ferme le menu avec Echap
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeMenu();
     }
@@ -56,7 +56,7 @@ function renderPlayers(players) {
     }
 
     let html = '';
-    players.forEach(function(player) {
+    players.forEach(function (player) {
         // Calcul du pourcentage de vie
         const healthPercent = Math.max(0, Math.min(100, ((player.health - 100) / (player.maxHealth - 100)) * 100));
         const healthColor = healthPercent > 60 ? '#44ff44' : healthPercent > 30 ? '#ffaa00' : '#ff4444';
@@ -109,7 +109,7 @@ function filterPlayers() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const rows = document.querySelectorAll('.player-row');
 
-    rows.forEach(function(row) {
+    rows.forEach(function (row) {
         const name = row.getAttribute('data-name');
         if (name.includes(search)) {
             row.style.display = 'flex';

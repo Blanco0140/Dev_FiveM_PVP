@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Liste des joueurs</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="player-menu" class="hidden">
+        <div class="menu-container">
+            <!-- En-tête du menu -->
+            <div class="menu-header">
+                <h1>JOUEURS CONNECTÉS</h1>
+                <div class="header-right">
+                    <span id="player-count">0 joueurs</span>
+                    <button id="close-btn" onclick="closeMenu()">✕</button>
+                </div>
+            </div>
+
+            <!-- Barre de recherche -->
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="🔍  Rechercher un joueur..." oninput="filterPlayers()">
+            </div>
+
+            <!-- En-tête du tableau -->
+            <div class="table-header">
+                <span class="col-id">ID</span>
+                <span class="col-name">NOM</span>
+                <span class="col-health">VIE</span>
+                <span class="col-ping">PING</span>
+                <span class="col-actions">ACTIONS</span>
+            </div>
+
+            <!-- Liste des joueurs (remplie dynamiquement) -->
+            <div id="player-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

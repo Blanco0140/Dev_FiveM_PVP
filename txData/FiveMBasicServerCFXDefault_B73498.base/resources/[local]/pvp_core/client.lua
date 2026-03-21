@@ -17,20 +17,22 @@ end)
 
 
 -- ==============================================
--- 1. HEADSHOT = MORT INSTANTANEE
+-- 1. HEADSHOT = MORT INSTANTANEE + PVP ACTIF
 -- ==============================================
 
--- Ce bout de code tourne en boucle en permanence
--- Il s'assure que les tirs à la tête font bien des dégâts critiques
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
         local ped = PlayerPedId()
         
+        -- ACTIVE LE PVP : permet aux joueurs de se tirer dessus
+        NetworkSetFriendlyFireOption(true)
+        SetCanAttackFriendly(ped, true, false)
+
         -- Active les dégâts critiques sur notre personnage
         SetPedSuffersCriticalHits(ped, true)
         
-        -- Désactive la régénération automatique de la vie (sinon en PVP c'est injuste)
+        -- Désactive la régénération automatique de la vie
         SetPlayerHealthRechargeMultiplier(PlayerId(), 0.0)
     end
 end)
@@ -100,27 +102,29 @@ Citizen.CreateThread(function()
             
             -- Cherche la safezone la plus proche
             local deathCoords = GetEntityCoords(ped)
-            local spawnX, spawnY, spawnZ
+            local spawnX, spawnY, spawnZ, spawnHeading
             
             local success, nearestZone = pcall(function()
                 return exports['pvp_safezone']:GetNearestSafezone(deathCoords)
             end)
             
             if success and nearestZone then
-                -- Respawn à la safezone la plus proche
+                -- Respawn à la safezone la plus proche avec la bonne direction
                 spawnX = nearestZone.x
                 spawnY = nearestZone.y
                 spawnZ = nearestZone.z
+                spawnHeading = nearestZone.heading or 0.0
             else
                 -- Fallback : spawn aléatoire si aucune safezone
                 local spawn = spawnPoints[math.random(#spawnPoints)]
                 spawnX = spawn.x
                 spawnY = spawn.y
                 spawnZ = spawn.z
+                spawnHeading = 0.0
             end
             
-            -- On fait réapparaître le joueur
-            NetworkResurrectLocalPlayer(spawnX, spawnY, spawnZ, 0.0, true, false)
+            -- On fait réapparaître le joueur dans la bonne direction
+            NetworkResurrectLocalPlayer(spawnX, spawnY, spawnZ, spawnHeading, true, false)
             
             -- On remet la vie au maximum
             SetEntityHealth(PlayerPedId(), 200)

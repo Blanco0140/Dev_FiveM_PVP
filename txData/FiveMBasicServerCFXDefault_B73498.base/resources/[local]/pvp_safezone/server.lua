@@ -21,15 +21,17 @@ RegisterCommand('safezone', function(source, args)
     if action == 'add' then
         local radius = tonumber(args[2]) or 50.0
 
-        -- Récupère la position du joueur
+        -- Récupère la position et la direction du joueur
         local ped = GetPlayerPed(adminId)
         local coords = GetEntityCoords(ped)
+        local heading = GetEntityHeading(ped)
 
         local zone = {
             id = nextId,
             x = coords.x,
             y = coords.y,
             z = coords.z,
+            heading = heading,
             radius = radius,
             creator = GetPlayerName(adminId)
         }
@@ -42,7 +44,7 @@ RegisterCommand('safezone', function(source, args)
 
         TriggerClientEvent('chat:addMessage', adminId, {
             color = {0, 255, 0},
-            args = {'[SAFEZONE]', 'Zone #' .. zone.id .. ' creee ! Rayon: ' .. radius .. 'm | Position: ' .. string.format("%.0f, %.0f, %.0f", coords.x, coords.y, coords.z)}
+            args = {'[SAFEZONE]', 'Zone #' .. zone.id .. ' creee ! Rayon: ' .. radius .. 'm | Direction: ' .. string.format("%.0f", heading) .. ' deg'}
         })
 
     -- ======= REMOVE =======

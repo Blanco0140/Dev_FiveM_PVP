@@ -71,8 +71,10 @@ Citizen.CreateThread(function()
 
         if inSafezone then
             local ped = PlayerPedId()
-            -- Invincible : tu peux tirer mais personne ne te fait de dégâts
+            -- Invincible : personne ne te fait de dégâts
             SetEntityInvincible(ped, true)
+            -- Tes balles ne font AUCUN dégât depuis la safezone
+            SetPlayerWeaponDamageModifier(PlayerId(), 0.0)
 
             -- Texte en bas de l'écran
             SetTextFont(4)
@@ -86,6 +88,8 @@ Citizen.CreateThread(function()
             DrawText(0.5, 0.92)
         else
             SetEntityInvincible(PlayerPedId(), false)
+            -- Remet les dégâts normaux hors safezone
+            SetPlayerWeaponDamageModifier(PlayerId(), 1.0)
         end
     end
 end)

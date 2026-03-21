@@ -80,66 +80,67 @@ RegisterNetEvent('pvp_leaderboard:requestStats')
 AddEventHandler('pvp_leaderboard:requestStats', function()
     local requesterId = source
 
-    -- Récupère le top 20 des joueurs triés par kills
-    local topPlayers = MySQL.query.await('SELECT name, kills, deaths FROM users ORDER BY kills DESC LIMIT 20')
+    -- Utilise pcall pour éviter que ça crash si la BDD n'est pas prête
+    local success, err = pcall(function()
+        local topPlayers = MySQL.query.await('SELECT name, kills, deaths FROM users ORDER BY kills DESC LIMIT 20')
 
-    -- Récupère le nombre total de joueurs en BDD
-    local totalResult = MySQL.query.await('SELECT COUNT(*) as total FROM users')
-    local totalPlayers = totalResult and totalResult[1] and totalResult[1].total or 0
+        local totalResult = MySQL.query.await('SELECT COUNT(*) as total FROM users')
+        local totalPlayers = totalResult and totalResult[1] and totalResult[1].total or 0
 
-    -- Récupère le total de kills aujourd'hui (approximatif, basé sur le total)
-    local totalKillsResult = MySQL.query.await('SELECT SUM(kills) as total FROM users')
-    local totalKills = totalKillsResult and totalKillsResult[1] and totalKillsResult[1].total or 0
+        local totalKillsResult = MySQL.query.await('SELECT SUM(kills) as total FROM users')
+        local totalKills = totalKillsResult and totalKillsResult[1] and totalKillsResult[1].total or 0
 
-    -- Joueurs en ligne
-    local onlinePlayers = GetPlayers()
-    local onlineCount = #onlinePlayers
+        local onlinePlayers = GetPlayers()
+        local onlineCount = #onlinePlayers
 
-    -- Récupère les identifiants des joueurs en ligne pour marquer le statut
-    local onlineIdentifiers = {}
-    for _, pid in ipairs(onlinePlayers) do
-        for k, v in ipairs(GetPlayerIdentifiers(tonumber(pid))) do
+        -- Stats du joueur qui demande
+        local myIdentifier = nil
+        for k, v in ipairs(GetPlayerIdentifiers(requesterId)) do
             if string.match(v, 'license:') then
-                onlineIdentifiers[v] = true
+                myIdentifier = v
                 break
             end
         end
-    end
-
-    -- Récupère les stats du joueur qui demande
-    local myIdentifier = nil
-    for k, v in ipairs(GetPlayerIdentifiers(requesterId)) do
-        if string.match(v, 'license:') then
-            myIdentifier = v
-            break
+        local myStats = nil
+        if myIdentifier then
+            local result = MySQL.query.await('SELECT name, kills, deaths FROM users WHERE identifier = ?', {myIdentifier})
+            if result and result[1] then
+                myStats = result[1]
+            end
         end
-    end
-    local myStats = nil
-    if myIdentifier then
-        local result = MySQL.query.await('SELECT name, kills, deaths FROM users WHERE identifier = ?', {myIdentifier})
-        if result and result[1] then
-            myStats = result[1]
-        end
-    end
 
-    -- Trouve le meilleur KD
-    local topKD = 0
-    if topPlayers then
-        for _, p in ipairs(topPlayers) do
-            local deaths = p.deaths or 0
-            if deaths == 0 then deaths = 1 end
-            local kd = (p.kills or 0) / deaths
-            if kd > topKD then topKD = kd end
+        -- Meilleur KD
+        local topKD = 0
+        if topPlayers then
+            for _, p in ipairs(topPlayers) do
+                local deaths = p.deaths or 0
+                if deaths == 0 then deaths = 1 end
+                local kd = (p.kills or 0) / deaths
+                if kd > topKD then topKD = kd end
+            end
         end
-    end
 
-    TriggerClientEvent('pvp_leaderboard:receiveStats', requesterId, {
-        players = topPlayers or {},
-        totalPlayers = totalPlayers,
-        onlineCount = onlineCount,
-        totalKills = totalKills,
-        topKD = math.floor(topKD * 10) / 10,
-        myStats = myStats,
-        onlineIdentifiers = onlineIdentifiers
-    })
+        TriggerClientEvent('pvp_leaderboard:receiveStats', requesterId, {
+            players = topPlayers or {},
+            totalPlayers = totalPlayers,
+            onlineCount = onlineCount,
+            totalKills = totalKills,
+            topKD = math.floor(topKD * 10) / 10,
+            myStats = myStats
+        })
+    end)
+
+    -- Si erreur, envoie quand même des données vides pour que le menu s'affiche
+    if not success then
+        print('^1[LEADERBOARD] Erreur BDD: ' .. tostring(err) .. '^7')
+        TriggerClientEvent('pvp_leaderboard:receiveStats', requesterId, {
+            players = {},
+            totalPlayers = 0,
+            onlineCount = #GetPlayers(),
+            totalKills = 0,
+            topKD = 0,
+            myStats = nil
+        })
+    end
 end)
+

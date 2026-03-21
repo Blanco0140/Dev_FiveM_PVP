@@ -5,11 +5,27 @@
 local safezones = {}
 local inSafezone = false
 local currentZoneId = nil
+local mapBlips = {}
 
 -- Réception des safezones depuis le serveur
 RegisterNetEvent('pvp_safezone:sync')
 AddEventHandler('pvp_safezone:sync', function(zones)
     safezones = zones or {}
+
+    -- Supprime les anciens blips de la carte
+    for _, blip in ipairs(mapBlips) do
+        if DoesBlipExist(blip) then RemoveBlip(blip) end
+    end
+    mapBlips = {}
+
+    -- Crée un cercle vert sur la carte pour chaque safezone
+    for id, zone in pairs(safezones) do
+        local radiusBlip = AddBlipForRadius(zone.x, zone.y, zone.z, zone.radius + 0.0)
+        SetBlipHighDetail(radiusBlip, true)
+        SetBlipColour(radiusBlip, 2) -- Vert
+        SetBlipAlpha(radiusBlip, 255)
+        table.insert(mapBlips, radiusBlip)
+    end
 end)
 
 -- ==============================================
@@ -72,38 +88,6 @@ Citizen.CreateThread(function()
             DrawText(0.5, 0.92)
         else
             SetEntityInvincible(PlayerPedId(), false)
-        end
-    end
-end)
-
--- ==============================================
--- MARQUEUR VISUEL AU SOL (cercle vert)
--- ==============================================
-
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(0)
-
-        local myCoords = GetEntityCoords(PlayerPedId())
-
-        for id, zone in pairs(safezones) do
-            local dist = #(myCoords - vector3(zone.x, zone.y, zone.z))
-
-            if dist < 250.0 then
-                -- Cercle plat au sol
-                DrawMarker(
-                    25,                             -- Type 25 : cercle plat
-                    zone.x, zone.y, zone.z - 0.5,  -- Légèrement sous le sol
-                    0.0, 0.0, 0.0,
-                    0.0, 0.0, 0.0,
-                    zone.radius * 2.0,              -- Diamètre X
-                    zone.radius * 2.0,              -- Diamètre Y
-                    2.0,                            -- Hauteur
-                    0, 200, 50, 50,                 -- Vert avec opacité 50
-                    false,
-                    false, 2, false, nil, nil, false
-                )
-            end
         end
     end
 end)

@@ -3,13 +3,16 @@
 -- Ce fichier tourne sur le PC de chaque joueur
 -- ==============================================
 
+-- Désactive le respawn automatique de spawnmanager (sinon il re-TP le joueur)
+Citizen.CreateThread(function()
+    exports.spawnmanager:setAutoSpawn(false)
+end)
+
 -- Quand le joueur apparaît pour la première fois, on lui donne un pistolet
--- (sera remplacé plus tard par le Starter Pack à l'étape 6)
 AddEventHandler('playerSpawned', function()
     Citizen.Wait(1000)
     GiveWeaponToPed(PlayerPedId(), GetHashKey('WEAPON_PISTOL'), 250, false, true)
 end)
-
 
 
 
@@ -23,10 +26,10 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
         local ped = PlayerPedId()
-
+        
         -- Active les dégâts critiques sur notre personnage
         SetPedSuffersCriticalHits(ped, true)
-
+        
         -- Désactive la régénération automatique de la vie (sinon en PVP c'est injuste)
         SetPlayerHealthRechargeMultiplier(PlayerId(), 0.0)
     end
@@ -37,12 +40,12 @@ end)
 AddEventHandler('gameEventTriggered', function(name, args)
     if name == 'CEventNetworkEntityDamage' then
         local victim = args[1]
-
+        
         -- On vérifie que c'est NOUS qui avons pris la balle
         if victim == PlayerPedId() then
             -- On demande au jeu quel os du corps a été touché
             local boneHit, bone = GetPedLastDamageBone(victim)
-
+            
             -- 31086 = c'est le numéro de l'os de la tête dans GTA (SKEL_Head)
             if bone == 31086 then
                 -- Balle dans la tête = 0 points de vie = MORT
@@ -72,12 +75,12 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
         local ped = PlayerPedId()
-
+        
         if IsEntityDead(ped) then
             -- Détecte qui nous a tué
             local killer = GetPedSourceOfDeath(ped)
             local killerId = 0
-
+            
             if killer and DoesEntityExist(killer) then
                 if IsPedAPlayer(killer) then
                     killerId = NetworkGetPlayerIndexFromPed(killer)
@@ -88,21 +91,21 @@ Citizen.CreateThread(function()
                     end
                 end
             end
-
+            
             -- Envoie l'événement au serveur pour tracker les stats
             TriggerServerEvent('pvp_core:playerKilled', killerId)
-
+            
             -- On attend 2 secondes pour que le joueur voie qu'il est mort
             Citizen.Wait(2000)
-
+            
             -- Cherche la safezone la plus proche
             local deathCoords = GetEntityCoords(ped)
             local spawnX, spawnY, spawnZ
-
+            
             local success, nearestZone = pcall(function()
                 return exports['pvp_safezone']:GetNearestSafezone(deathCoords)
             end)
-
+            
             if success and nearestZone then
                 -- Respawn à la safezone la plus proche
                 spawnX = nearestZone.x
@@ -115,22 +118,22 @@ Citizen.CreateThread(function()
                 spawnY = spawn.y
                 spawnZ = spawn.z
             end
-
+            
             -- On fait réapparaître le joueur
             NetworkResurrectLocalPlayer(spawnX, spawnY, spawnZ, 0.0, true, false)
-
+            
             -- On remet la vie au maximum
             SetEntityHealth(PlayerPedId(), 200)
-
+            
             -- On nettoie le sang sur le personnage
             ClearPedBloodDamage(PlayerPedId())
-
+            
             -- On s'assure que le joueur n'est PAS invincible après un respawn (la safezone le remettra)
             SetPlayerInvincible(PlayerId(), false)
-
+            
             -- On donne un pistolet temporaire pour pouvoir se battre
             GiveWeaponToPed(PlayerPedId(), GetHashKey('WEAPON_PISTOL'), 250, false, true)
-
+            
             -- Petite pause pour éviter les bugs
             Citizen.Wait(500)
         end
@@ -147,18 +150,18 @@ end)
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
-
+        
         -- Pas de voitures civiles qui roulent
         SetVehicleDensityMultiplierThisFrame(0.0)
         SetRandomVehicleDensityMultiplierThisFrame(0.0)
-
+        
         -- Pas de voitures garées sur le trottoir
         SetParkedVehicleDensityMultiplierThisFrame(0.0)
-
+        
         -- Pas de piétons (les gens qui marchent dans la rue)
         SetPedDensityMultiplierThisFrame(0.0)
         SetScenarioPedDensityMultiplierThisFrame(0.0, 0.0)
-
+        
         -- Pas de camions poubelle, bateaux, trains
         SetGarbageTrucks(false)
         SetRandomBoats(false)
@@ -171,12 +174,12 @@ end)
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(1000) -- Vérifie chaque seconde (pas besoin de plus)
-
+        
         -- Désactive les 12 types de services d'urgence (police, ambulance, pompiers, etc.)
         for i = 1, 12 do
             EnableDispatchService(i, false)
         end
-
+        
         -- Supprime toutes les étoiles de recherche (wanted level = 0)
         SetMaxWantedLevel(0)
         SetPlayerWantedLevel(PlayerId(), 0, false)

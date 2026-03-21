@@ -20,11 +20,11 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
 
         if not exist[1] then
             MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths) VALUES (?, ?, 0, 0)', {identifier, name})
-            print('^2[PVP] Nouveau joueur enregistre : ' .. name .. '^7')
+            print('^2[PVP] Nouveau joueur : ' .. name .. ' | Sa licence est -> ^3' .. identifier .. '^7')
         else
             -- Met à jour le nom au cas où il a changé
             MySQL.update.await('UPDATE users SET name = ? WHERE identifier = ?', {name, identifier})
-            print('^4[PVP] Connexion d un joueur connu : ' .. name .. '^7')
+            print('^4[PVP] Joueur connu : ' .. name .. ' | Sa licence est -> ^3' .. identifier .. '^7')
         end
     else
         print('^1[PVP] Erreur : Impossible de trouver la licence du joueur ' .. name .. '^7')

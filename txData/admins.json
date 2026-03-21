@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Blanco06",
+    "master": true,
+    "password_hash": "$2a$11$k4BsoyA1NXngcfzkmpzJtO8S8UHDBRQbQWJ/Mn3qj5M3otUABBKnm",
+    "providers": {
+      "citizenfx": {
+        "id": "Blanco06",
+        "identifier": "fivem:1309739",
+        "data": {
+          "sub": "014ff7294e14804051d9f46cff107749",
+          "nameid": "https://forum.cfx.re/internal/user/1309739",
+          "name": "Blanco06",
+          "picture": "https://forum.cfx.re/user_avatar/forum.cfx.re/blanco06/256/1270212_2.png",
+          "profile": "https://forum.cfx.re/u/Blanco06"
+        }
+      }
+    },
+    "permissions": []
+  }
+]

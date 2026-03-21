@@ -1,0 +1,24 @@
+# Fichiers de cache FiveM / txAdmin
+cache/
+server-cache/
+server-cache-priv/
+txData/*/cache/
+txData/*/logs/
+txData/*/crashes/
+
+# Fichiers de logs
+*.log
+crash/
+crashes/
+
+# Bases de données et sauvegardes SQL
+*.sql
+*.bak
+
+# Fichiers système Windows
+Thumbs.db
+desktop.ini
+
+# Optionnel : Fichiers de configuration sensibles (DÉCOMMENTE SI TU VEUX LES CACHER)
+# server.cfg
+# txData/txAdmin/config.json

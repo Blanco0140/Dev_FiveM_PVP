@@ -4,19 +4,17 @@
 
 let allPlayers = [];
 
-// Écoute les messages envoyés depuis le script Lua (client.lua)
-window.addEventListener('message', function (event) {
+// Écoute les messages envoyés depuis le script Lua
+window.addEventListener('message', function(event) {
     const data = event.data;
 
     if (data.type === 'open') {
-        // Ouvre le menu et affiche les joueurs (ou "chargement" si vide)
         document.getElementById('player-menu').classList.remove('hidden');
         allPlayers = data.players || [];
         renderPlayers(allPlayers);
     }
 
     if (data.type === 'update') {
-        // Met à jour la liste des joueurs sans fermer/rouvrir le menu
         allPlayers = data.players || [];
         renderPlayers(allPlayers);
     }
@@ -26,24 +24,22 @@ window.addEventListener('message', function (event) {
     }
 });
 
-// Ferme le menu avec Echap
-document.addEventListener('keydown', function (event) {
+// Ferme avec Echap
+document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeMenu();
     }
 });
 
-// Fermer le menu
 function closeMenu() {
     document.getElementById('player-menu').classList.add('hidden');
-    // Prévient le script Lua qu'on ferme le menu
     fetch('https://pvp_admin/close', {
         method: 'POST',
         body: JSON.stringify({})
     });
 }
 
-// Affiche la liste des joueurs dans le menu
+// Affiche la liste des joueurs
 function renderPlayers(players) {
     const list = document.getElementById('player-list');
     const count = document.getElementById('player-count');
@@ -56,12 +52,10 @@ function renderPlayers(players) {
     }
 
     let html = '';
-    players.forEach(function (player) {
-        // Calcul du pourcentage de vie
+    players.forEach(function(player) {
         const healthPercent = Math.max(0, Math.min(100, ((player.health - 100) / (player.maxHealth - 100)) * 100));
-        const healthColor = healthPercent > 60 ? '#44ff44' : healthPercent > 30 ? '#ffaa00' : '#ff4444';
+        const healthColor = healthPercent > 60 ? '#4a4' : healthPercent > 30 ? '#a84' : '#a44';
 
-        // Couleur du ping
         let pingClass = 'ping-good';
         if (player.ping > 100) pingClass = 'ping-medium';
         if (player.ping > 200) pingClass = 'ping-bad';
@@ -86,8 +80,12 @@ function renderPlayers(players) {
                 <span class="col-actions">
                     <button class="action-btn btn-goto" onclick="doAction('goto ${player.id}')">TP</button>
                     <button class="action-btn btn-bring" onclick="doAction('bring ${player.id}')">BRING</button>
-                    <button class="action-btn btn-revive" onclick="doAction('revive ${player.id}')">REVIVE</button>
                     <button class="action-btn btn-heal" onclick="doAction('heal ${player.id}')">HEAL</button>
+                    <button class="action-btn btn-revive" onclick="doAction('revive ${player.id}')">REVIVE</button>
+                    <button class="action-btn btn-freeze" onclick="doAction('freeze ${player.id}')">FREEZE</button>
+                    <button class="action-btn btn-kill" onclick="doAction('kill ${player.id}')">KILL</button>
+                    <button class="action-btn btn-kick" onclick="doAction('kick ${player.id}')">KICK</button>
+                    <button class="action-btn btn-ban" onclick="doAction('ban ${player.id}')">BAN</button>
                 </span>
             </div>
         `;
@@ -96,7 +94,6 @@ function renderPlayers(players) {
     list.innerHTML = html;
 }
 
-// Exécute une action admin (envoie la commande au client Lua)
 function doAction(command) {
     fetch('https://pvp_admin/action', {
         method: 'POST',
@@ -104,22 +101,15 @@ function doAction(command) {
     });
 }
 
-// Filtre les joueurs par nom
 function filterPlayers() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const rows = document.querySelectorAll('.player-row');
-
-    rows.forEach(function (row) {
+    rows.forEach(function(row) {
         const name = row.getAttribute('data-name');
-        if (name.includes(search)) {
-            row.style.display = 'flex';
-        } else {
-            row.style.display = 'none';
-        }
+        row.style.display = name.includes(search) ? 'flex' : 'none';
     });
 }
 
-// Protection contre le XSS (empêche les joueurs de mettre du HTML dans leur nom)
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

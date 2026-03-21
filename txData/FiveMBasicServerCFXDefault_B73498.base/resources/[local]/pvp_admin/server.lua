@@ -198,6 +198,89 @@ end, true)
 
 
 -- ==============================================
+-- KILL / KICK / BAN / FREEZE
+-- ==============================================
+
+-- /kill [id] : Tue un joueur instantanément
+RegisterCommand('kill', function(source, args)
+    local adminId = source
+    if #args < 1 then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Utilisation : /kill [id]'} })
+        return
+    end
+    local targetId = tonumber(args[1])
+    if not targetId or GetPlayerName(targetId) == nil then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Joueur introuvable !'} })
+        return
+    end
+    TriggerClientEvent('pvp_admin:kill', targetId)
+    local targetName = GetPlayerName(targetId)
+    TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', targetName .. ' (ID: ' .. targetId .. ') a été tué'} })
+end, true)
+
+-- /kick [id] [raison] : Expulse un joueur du serveur
+RegisterCommand('kick', function(source, args)
+    local adminId = source
+    if #args < 1 then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Utilisation : /kick [id] [raison]'} })
+        return
+    end
+    local targetId = tonumber(args[1])
+    if not targetId or GetPlayerName(targetId) == nil then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Joueur introuvable !'} })
+        return
+    end
+    local reason = "Expulsé par un administrateur"
+    if #args > 1 then
+        reason = table.concat(args, " ", 2)
+    end
+    local targetName = GetPlayerName(targetId)
+    DropPlayer(targetId, 'Tu as ete kick.\nRaison : ' .. reason)
+    TriggerClientEvent('chat:addMessage', adminId, { color = {255,165,0}, args = {'[ADMIN]', targetName .. ' a été kick. Raison : ' .. reason} })
+end, true)
+
+-- /ban [id] [raison] : Bannit un joueur
+RegisterCommand('ban', function(source, args)
+    local adminId = source
+    if #args < 1 then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Utilisation : /ban [id] [raison]'} })
+        return
+    end
+    local targetId = tonumber(args[1])
+    if not targetId or GetPlayerName(targetId) == nil then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Joueur introuvable !'} })
+        return
+    end
+    local reason = "Banni par un administrateur"
+    if #args > 1 then
+        reason = table.concat(args, " ", 2)
+    end
+    local targetName = GetPlayerName(targetId)
+    DropPlayer(targetId, 'Tu as ete BANNI de ce serveur.\nRaison : ' .. reason)
+    TriggerClientEvent('chat:addMessage', adminId, { color = {180,0,0}, args = {'[ADMIN]', targetName .. ' a ete BANNI. Raison : ' .. reason} })
+    print('^1[ADMIN] BAN: ' .. targetName .. ' - Raison: ' .. reason .. '^7')
+end, true)
+
+-- /freeze [id] : Gèle ou dégèle un joueur
+RegisterCommand('freeze', function(source, args)
+    local adminId = source
+    if #args < 1 then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Utilisation : /freeze [id]'} })
+        return
+    end
+    local targetId = tonumber(args[1])
+    if not targetId or GetPlayerName(targetId) == nil then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255,0,0}, args = {'[ADMIN]', 'Joueur introuvable !'} })
+        return
+    end
+    TriggerClientEvent('pvp_admin:freeze', targetId)
+    local targetName = GetPlayerName(targetId)
+    TriggerClientEvent('chat:addMessage', adminId, { color = {100,150,220}, args = {'[ADMIN]', targetName .. ' a ete gele/degele'} })
+end, true)
+
+
+-- ==============================================
+
 -- MENU JOUEURS (F9) - Données serveur
 -- ==============================================
 

@@ -34,10 +34,67 @@ AddEventHandler('pvp_admin:heal', function()
     ClearPedBloodDamage(ped)
 end)
 
+-- Quand le serveur nous dit de tuer le joueur
+RegisterNetEvent('pvp_admin:kill')
+AddEventHandler('pvp_admin:kill', function()
+    SetEntityHealth(PlayerPedId(), 0)
+end)
+
+-- Quand le serveur nous dit de geler/dégeler le joueur
+local isFrozen = false
+RegisterNetEvent('pvp_admin:freeze')
+AddEventHandler('pvp_admin:freeze', function()
+    isFrozen = not isFrozen
+    local ped = PlayerPedId()
+    FreezeEntityPosition(ped, isFrozen)
+    if isFrozen then
+        TriggerEvent('chat:addMessage', { color = {100,150,220}, args = {'[ADMIN]', 'Tu as été gelé par un administrateur'} })
+    else
+        TriggerEvent('chat:addMessage', { color = {0,255,0}, args = {'[ADMIN]', 'Tu as été dégelé'} })
+    end
+end)
+
+-- /tpm : Téléporte au marqueur GPS (waypoint sur la carte)
+RegisterCommand('tpm', function()
+    local waypoint = GetFirstBlipInfoId(8) -- 8 = waypoint blip
+
+    if not DoesBlipExist(waypoint) then
+        TriggerEvent('chat:addMessage', { color = {255,0,0}, args = {'[ADMIN]', 'Place un marqueur sur la carte d\'abord !'} })
+        return
+    end
+
+    local blipCoords = GetBlipInfoIdCoord(waypoint)
+    local ped = PlayerPedId()
+
+    -- Cherche le bon Z (hauteur du sol) pour ne pas tomber dans le vide
+    local foundZ = false
+    for z = 1000.0, 0.0, -25.0 do
+        SetEntityCoordsNoOffset(ped, blipCoords.x, blipCoords.y, z, false, false, false)
+        Citizen.Wait(50)
+        RequestCollisionAtCoord(blipCoords.x, blipCoords.y, z)
+        Citizen.Wait(50)
+        local found, groundZ = GetGroundZFor_3dCoord(blipCoords.x, blipCoords.y, z, false)
+        if found then
+            SetEntityCoordsNoOffset(ped, blipCoords.x, blipCoords.y, groundZ + 1.0, false, false, false)
+            foundZ = true
+            break
+        end
+    end
+
+    if not foundZ then
+        SetEntityCoordsNoOffset(ped, blipCoords.x, blipCoords.y, 200.0, false, false, false)
+    end
+
+    TriggerEvent('chat:addMessage', { color = {0,255,0}, args = {'[ADMIN]', 'Téléporté au marqueur GPS'} })
+end, true) -- admin seulement
+
+RegisterKeyMapping('tpm', 'Teleport au marqueur GPS', 'keyboard', 'F7')
+
 
 -- ==============================================
 -- MENU JOUEURS (F9) - Interface NUI
 -- ==============================================
+
 
 local menuOpen = false
 

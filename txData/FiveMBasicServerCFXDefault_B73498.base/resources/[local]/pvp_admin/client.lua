@@ -1,19 +1,90 @@
 -- ==============================================
--- ADMIN CLIENT.LUA - Réception des téléportations
+-- ADMIN CLIENT.LUA - Téléportation, Revive, Menu
 -- ==============================================
 
 -- Quand le serveur nous dit de nous téléporter quelque part
 RegisterNetEvent('pvp_admin:teleport')
 AddEventHandler('pvp_admin:teleport', function(x, y, z)
     local ped = PlayerPedId()
-
-    -- Téléporte le joueur aux coordonnées reçues
     SetEntityCoords(ped, x, y, z + 1.0, false, false, false, true)
-
-    -- Petit effet pour que ce soit propre (évite de tomber dans le vide)
     RequestCollisionAtCoord(x, y, z)
     Citizen.Wait(500)
 end)
+
+-- Quand le serveur nous dit de réanimer le joueur (il est mort)
+RegisterNetEvent('pvp_admin:revive')
+AddEventHandler('pvp_admin:revive', function()
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+
+    -- Résurrection du joueur
+    NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
+
+    -- Remet la vie au max
+    SetEntityHealth(PlayerPedId(), 200)
+    ClearPedBloodDamage(PlayerPedId())
+    SetPlayerInvincible(PlayerId(), false)
+end)
+
+-- Quand le serveur nous dit de soigner le joueur (il est vivant)
+RegisterNetEvent('pvp_admin:heal')
+AddEventHandler('pvp_admin:heal', function()
+    local ped = PlayerPedId()
+    SetEntityHealth(ped, 200)
+    ClearPedBloodDamage(ped)
+end)
+
+
+-- ==============================================
+-- MENU JOUEURS (F9) - Interface NUI
+-- ==============================================
+
+local menuOpen = false
+
+RegisterCommand('playermenu', function()
+    if menuOpen then
+        -- Fermer le menu
+        menuOpen = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({ type = 'close' })
+    else
+        -- Ouvrir le menu et demander la liste des joueurs au serveur
+        menuOpen = true
+        SetNuiFocus(true, true)
+        TriggerServerEvent('pvp_admin:requestPlayers')
+    end
+end, true) -- admin seulement
+
+-- Lier F9 au menu
+RegisterKeyMapping('playermenu', 'Ouvrir le menu des joueurs', 'keyboard', 'F9')
+
+-- Quand on reçoit la liste des joueurs du serveur
+RegisterNetEvent('pvp_admin:receivePlayers')
+AddEventHandler('pvp_admin:receivePlayers', function(playerList)
+    SendNUIMessage({
+        type = 'open',
+        players = playerList
+    })
+end)
+
+-- Quand le joueur ferme le menu via le bouton X ou Echap
+RegisterNUICallback('close', function(data, cb)
+    menuOpen = false
+    SetNuiFocus(false, false)
+    cb('ok')
+end)
+
+-- Quand l'admin clique sur un bouton d'action dans le menu
+RegisterNUICallback('action', function(data, cb)
+    -- Exécute la commande correspondante
+    ExecuteCommand(data.command)
+    -- Rafraîchit la liste
+    Citizen.Wait(500)
+    TriggerServerEvent('pvp_admin:requestPlayers')
+    cb('ok')
+end)
+
+
 
 -- Affiche l'ID de chaque joueur au-dessus de sa tête (visible uniquement pour les admins)
 -- On utilise une commande pour activer/désactiver cet affichage
@@ -96,50 +167,31 @@ end
 local noclipActive = false
 local noclipSpeed = 2.0       -- Vitesse normale
 local noclipFastSpeed = 6.0   -- Vitesse rapide (avec Shift)
-local noclipCam = nil
 
--- F10 = touche 57 dans FiveM (INPUT_SELECT_WEAPON_SPECIAL est 57)
--- On utilise RegisterKeyMapping pour lier F10 à une commande
 RegisterCommand('noclip', function()
     noclipActive = not noclipActive
     local ped = PlayerPedId()
 
     if noclipActive then
         -- ACTIVER LE NOCLIP
-
-        -- Rend le joueur invisible pour les autres
         SetEntityVisible(ped, false, false)
-
-        -- Le joueur ne peut plus recevoir de dégâts
         SetEntityInvincible(ped, true)
-
-        -- Désactive les collisions (on traverse les murs)
         SetEntityCollision(ped, false, false)
 
-        -- Freeze le personnage (il ne bouge plus tout seul)
-        FreezeEntityPosition(ped, true)
-
-        -- Message dans le chat
         TriggerEvent('chat:addMessage', {
             color = {0, 255, 0},
-            args = {'[ADMIN]', 'Noclip ACTIVÉ - ZQSD pour bouger, Shift = vitesse rapide'}
+            args = {'[ADMIN]', 'Noclip ACTIVÉ - ZQSD pour bouger, Shift = rapide, Ctrl = lent'}
         })
     else
         -- DÉSACTIVER LE NOCLIP
-
-        -- Remet le joueur visible
         SetEntityVisible(ped, true, false)
-
-        -- Réactive les dégâts
         SetEntityInvincible(ped, false)
-
-        -- Réactive les collisions
         SetEntityCollision(ped, true, true)
 
-        -- Défreeze le personnage
-        FreezeEntityPosition(ped, false)
+        -- Empêche de tomber dans le vide en rechargeant le sol
+        local coords = GetEntityCoords(ped)
+        RequestCollisionAtCoord(coords.x, coords.y, coords.z)
 
-        -- Message dans le chat
         TriggerEvent('chat:addMessage', {
             color = {255, 0, 0},
             args = {'[ADMIN]', 'Noclip DÉSACTIVÉ'}
@@ -153,30 +205,36 @@ RegisterKeyMapping('noclip', 'Activer/Désactiver le Noclip', 'keyboard', 'F10')
 -- Boucle qui gère le déplacement en noclip
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(0)
-
         if noclipActive then
+            Citizen.Wait(0)
             local ped = PlayerPedId()
             local coords = GetEntityCoords(ped)
             local heading = GetGameplayCamRot(2)
 
-            -- Calcul de la direction de la caméra (où on regarde)
+            -- Calcul de la direction de la caméra
             local camForwardX = -math.sin(math.rad(heading.z)) * math.cos(math.rad(heading.x))
             local camForwardY =  math.cos(math.rad(heading.z)) * math.cos(math.rad(heading.x))
             local camForwardZ =  math.sin(math.rad(heading.x))
 
-            -- Droite de la caméra (pour aller à gauche/droite)
             local camRightX = math.cos(math.rad(heading.z))
             local camRightY = math.sin(math.rad(heading.z))
 
-            -- Vitesse : rapide si Shift est maintenu, normale sinon
+            -- On désactive les contrôles de mouvement du jeu AVANT de les lire
+            DisableControlAction(0, 30, true)  -- Gauche/Droite
+            DisableControlAction(0, 31, true)  -- Avant/Arrière
+            DisableControlAction(0, 32, true)  -- W
+            DisableControlAction(0, 33, true)  -- S
+            DisableControlAction(0, 34, true)  -- A/Q
+            DisableControlAction(0, 35, true)  -- D
+            DisableControlAction(0, 36, true)  -- Ctrl
+            DisableControlAction(0, 21, true)  -- Shift
+
+            -- Vitesse : rapide si Shift, lente si Ctrl
             local speed = noclipSpeed
-            if IsControlPressed(0, 21) then -- 21 = Shift (Sprint)
+            if IsDisabledControlPressed(0, 21) then -- Shift
                 speed = noclipFastSpeed
             end
-
-            -- Vitesse lente si Ctrl est maintenu
-            if IsControlPressed(0, 36) then -- 36 = Ctrl (Duck)
+            if IsDisabledControlPressed(0, 36) then -- Ctrl
                 speed = noclipSpeed * 0.3
             end
 
@@ -184,43 +242,37 @@ Citizen.CreateThread(function()
             local newY = coords.y
             local newZ = coords.z
 
-            -- Z (avant) = Avancer
-            if IsControlPressed(0, 32) then -- 32 = W/Z (Move Forward)
+            -- Z/W = Avancer
+            if IsDisabledControlPressed(0, 32) then
                 newX = newX + camForwardX * speed * 0.1
                 newY = newY + camForwardY * speed * 0.1
                 newZ = newZ + camForwardZ * speed * 0.1
             end
 
             -- S = Reculer
-            if IsControlPressed(0, 33) then -- 33 = S (Move Backward)
+            if IsDisabledControlPressed(0, 33) then
                 newX = newX - camForwardX * speed * 0.1
                 newY = newY - camForwardY * speed * 0.1
                 newZ = newZ - camForwardZ * speed * 0.1
             end
 
-            -- Q = Aller à gauche
-            if IsControlPressed(0, 34) then -- 34 = A/Q (Move Left)
+            -- Q/A = Gauche
+            if IsDisabledControlPressed(0, 34) then
                 newX = newX - camRightX * speed * 0.1
                 newY = newY - camRightY * speed * 0.1
             end
 
-            -- D = Aller à droite
-            if IsControlPressed(0, 35) then -- 35 = D (Move Right)
+            -- D = Droite
+            if IsDisabledControlPressed(0, 35) then
                 newX = newX + camRightX * speed * 0.1
                 newY = newY + camRightY * speed * 0.1
             end
 
-            -- On déplace le personnage à la nouvelle position
+            -- Déplace le joueur
             SetEntityCoordsNoOffset(ped, newX, newY, newZ, true, true, true)
-
-            -- On tourne le personnage dans la direction de la caméra
             SetEntityHeading(ped, heading.z)
-
-            -- Empêche le jeu d'afficher le personnage en train de marcher/courir
-            DisableControlAction(0, 32, true)  -- W
-            DisableControlAction(0, 33, true)  -- S
-            DisableControlAction(0, 34, true)  -- A/Q
-            DisableControlAction(0, 35, true)  -- D
+        else
+            Citizen.Wait(500)
         end
     end
 end)

@@ -122,3 +122,108 @@ RegisterCommand('id', function(source, args)
         args = {'[SERVEUR]', 'Ton ID est : ' .. playerId}
     })
 end, false) -- false = tout le monde peut utiliser cette commande
+
+
+-- ==============================================
+-- RÉANIMATION
+-- ==============================================
+
+-- /revive [id] : Réanime un joueur mort (le remet en vie)
+RegisterCommand('revive', function(source, args)
+    local adminId = source
+
+    if #args < 1 then
+        TriggerClientEvent('chat:addMessage', adminId, {
+            color = {255, 0, 0},
+            args = {'[ADMIN]', 'Utilisation : /revive [id du joueur]'}
+        })
+        return
+    end
+
+    local targetId = tonumber(args[1])
+
+    if not targetId or GetPlayerName(targetId) == nil then
+        TriggerClientEvent('chat:addMessage', adminId, {
+            color = {255, 0, 0},
+            args = {'[ADMIN]', 'Joueur introuvable avec cet ID !'}
+        })
+        return
+    end
+
+    -- Envoie l'ordre de réanimation au joueur ciblé
+    TriggerClientEvent('pvp_admin:revive', targetId)
+
+    local targetName = GetPlayerName(targetId)
+    TriggerClientEvent('chat:addMessage', adminId, {
+        color = {0, 255, 0},
+        args = {'[ADMIN]', targetName .. ' (ID: ' .. targetId .. ') a été réanimé !'}
+    })
+    TriggerClientEvent('chat:addMessage', targetId, {
+        color = {0, 255, 0},
+        args = {'[ADMIN]', 'Tu as été réanimé par un administrateur'}
+    })
+end, true)
+
+
+-- /heal [id] : Remet la vie au maximum d'un joueur (même s'il n'est pas mort)
+RegisterCommand('heal', function(source, args)
+    local adminId = source
+
+    if #args < 1 then
+        TriggerClientEvent('chat:addMessage', adminId, {
+            color = {255, 0, 0},
+            args = {'[ADMIN]', 'Utilisation : /heal [id du joueur]'}
+        })
+        return
+    end
+
+    local targetId = tonumber(args[1])
+
+    if not targetId or GetPlayerName(targetId) == nil then
+        TriggerClientEvent('chat:addMessage', adminId, {
+            color = {255, 0, 0},
+            args = {'[ADMIN]', 'Joueur introuvable avec cet ID !'}
+        })
+        return
+    end
+
+    TriggerClientEvent('pvp_admin:heal', targetId)
+
+    local targetName = GetPlayerName(targetId)
+    TriggerClientEvent('chat:addMessage', adminId, {
+        color = {0, 255, 0},
+        args = {'[ADMIN]', targetName .. ' (ID: ' .. targetId .. ') a été soigné !'}
+    })
+end, true)
+
+
+-- ==============================================
+-- MENU JOUEURS (F9) - Données serveur
+-- ==============================================
+
+-- Quand le client demande la liste des joueurs
+RegisterNetEvent('pvp_admin:requestPlayers')
+AddEventHandler('pvp_admin:requestPlayers', function()
+    local adminId = source
+    local players = GetPlayers()
+    local playerList = {}
+
+    for _, playerId in ipairs(players) do
+        local playerName = GetPlayerName(playerId)
+        local playerPed = GetPlayerPed(playerId)
+        local health = GetEntityHealth(playerPed)
+        local maxHealth = 200
+        local ping = GetPlayerPing(playerId)
+
+        table.insert(playerList, {
+            id = tonumber(playerId),
+            name = playerName,
+            health = health,
+            maxHealth = maxHealth,
+            ping = ping
+        })
+    end
+
+    -- Renvoie la liste au client qui l'a demandée
+    TriggerClientEvent('pvp_admin:receivePlayers', adminId, playerList)
+end)

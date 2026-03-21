@@ -20,6 +20,8 @@ end)
 -- 1. HEADSHOT = MORT INSTANTANEE + PVP ACTIF
 -- ==============================================
 
+local lastKnownHealth = 200
+
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
@@ -37,25 +39,49 @@ Citizen.CreateThread(function()
     end
 end)
 
--- Ce code écoute les "événements de dégâts" du jeu
--- Quand quelqu'un nous tire dessus, on vérifie si la balle a touché la tête
+-- Vérifie si une position est dans une safezone
+function IsPositionInSafezone(coords)
+    local success, safezones = pcall(function()
+        return exports['pvp_safezone']:GetSafezones()
+    end)
+    if success and safezones then
+        for id, zone in pairs(safezones) do
+            local dist = #(coords - vector3(zone.x, zone.y, zone.z))
+            if dist < zone.radius then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Headshot = mort instantanée (SAUF si le tireur est dans une safezone)
 AddEventHandler('gameEventTriggered', function(name, args)
     if name == 'CEventNetworkEntityDamage' then
         local victim = args[1]
+        local attacker = args[2]
         
-        -- On vérifie que c'est NOUS qui avons pris la balle
         if victim == PlayerPedId() then
-            -- On demande au jeu quel os du corps a été touché
-            local boneHit, bone = GetPedLastDamageBone(victim)
+            -- Vérifie si l'attaquant existe et est dans une safezone
+            if attacker and DoesEntityExist(attacker) then
+                local attackerCoords = GetEntityCoords(attacker)
+                if IsPositionInSafezone(attackerCoords) then
+                    -- Tireur dans la safezone : annule TOUT dégât et restaure la vie
+                    SetEntityHealth(victim, lastKnownHealth)
+                    return
+                end
+            end
             
-            -- 31086 = c'est le numéro de l'os de la tête dans GTA (SKEL_Head)
+            -- Headshot normal (tireur hors safezone)
+            lastKnownHealth = GetEntityHealth(victim)
+            local boneHit, bone = GetPedLastDamageBone(victim)
             if bone == 31086 then
-                -- Balle dans la tête = 0 points de vie = MORT
                 SetEntityHealth(victim, 0)
             end
         end
     end
 end)
+
 
 
 -- ==============================================

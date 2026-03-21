@@ -103,9 +103,12 @@ RegisterCommand('getcoord', function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     local heading = GetEntityHeading(ped)
-    local coordStr = string.format("%.4f, %.4f, %.4f (heading: %.2f)", coords.x, coords.y, coords.z, heading)
-    -- Envoie au NUI pour copier dans le presse-papier
+    local coordStr = string.format("%.4f, %.4f, %.4f, heading: %.2f", coords.x, coords.y, coords.z, heading)
+    -- Active brièvement le NUI pour que le clipboard fonctionne
+    SetNuiFocus(true, false)
     SendNUIMessage({ type = 'copyCoords', coords = coordStr })
+    Citizen.Wait(200)
+    SetNuiFocus(false, false)
     TriggerEvent('chat:addMessage', { color = {0,255,0}, args = {'[ADMIN]', 'Coordonnées copiées : ' .. coordStr} })
 end, true)
 

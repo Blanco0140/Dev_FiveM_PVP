@@ -95,11 +95,29 @@ Citizen.CreateThread(function()
             -- On attend 2 secondes pour que le joueur voie qu'il est mort
             Citizen.Wait(2000)
 
-            -- On choisit un point de spawn au hasard
-            local spawn = spawnPoints[math.random(#spawnPoints)]
+            -- Cherche la safezone la plus proche
+            local deathCoords = GetEntityCoords(ped)
+            local spawnX, spawnY, spawnZ
 
-            -- On fait réapparaître le joueur à cet endroit
-            NetworkResurrectLocalPlayer(spawn.x, spawn.y, spawn.z, 0.0, true, false)
+            local success, nearestZone = pcall(function()
+                return exports['pvp_safezone']:GetNearestSafezone(deathCoords)
+            end)
+
+            if success and nearestZone then
+                -- Respawn à la safezone la plus proche
+                spawnX = nearestZone.x
+                spawnY = nearestZone.y
+                spawnZ = nearestZone.z
+            else
+                -- Fallback : spawn aléatoire si aucune safezone
+                local spawn = spawnPoints[math.random(#spawnPoints)]
+                spawnX = spawn.x
+                spawnY = spawn.y
+                spawnZ = spawn.z
+            end
+
+            -- On fait réapparaître le joueur
+            NetworkResurrectLocalPlayer(spawnX, spawnY, spawnZ, 0.0, true, false)
 
             -- On remet la vie au maximum
             SetEntityHealth(PlayerPedId(), 200)
@@ -107,10 +125,10 @@ Citizen.CreateThread(function()
             -- On nettoie le sang sur le personnage
             ClearPedBloodDamage(PlayerPedId())
 
-            -- On s'assure que le joueur n'est PAS invincible après un respawn
+            -- On s'assure que le joueur n'est PAS invincible après un respawn (la safezone le remettra)
             SetPlayerInvincible(PlayerId(), false)
 
-            -- On donne un pistolet temporaire pour pouvoir se battre (sera remplacé par le Starter Pack)
+            -- On donne un pistolet temporaire pour pouvoir se battre
             GiveWeaponToPed(PlayerPedId(), GetHashKey('WEAPON_PISTOL'), 250, false, true)
 
             -- Petite pause pour éviter les bugs

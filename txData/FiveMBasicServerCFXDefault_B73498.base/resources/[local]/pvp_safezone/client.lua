@@ -29,7 +29,7 @@ AddEventHandler('pvp_safezone:sync', function(zones)
 end)
 
 -- ==============================================
--- PROTECTION DANS LA SAFEZONE
+-- DETECTION SAFEZONE
 -- ==============================================
 
 Citizen.CreateThread(function()
@@ -61,22 +61,20 @@ Citizen.CreateThread(function()
     end
 end)
 
--- Boucle de protection active
+-- ==============================================
+-- PROTECTION (invincible dans la safezone, tir autorisé)
+-- ==============================================
+
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
 
         if inSafezone then
             local ped = PlayerPedId()
+            -- Invincible : tu peux tirer mais personne ne te fait de dégâts
             SetEntityInvincible(ped, true)
-            DisablePlayerFiring(PlayerId(), true)
-            DisableControlAction(0, 24, true)
-            DisableControlAction(0, 25, true)
-            DisableControlAction(0, 47, true)
-            DisableControlAction(0, 53, true)
-            DisableControlAction(0, 257, true)
-            DisableControlAction(0, 263, true)
 
+            -- Texte en bas de l'écran
             SetTextFont(4)
             SetTextScale(0.38, 0.38)
             SetTextColour(0, 255, 100, 200)
@@ -92,3 +90,25 @@ Citizen.CreateThread(function()
     end
 end)
 
+-- ==============================================
+-- FONCTION : Trouver la safezone la plus proche
+-- ==============================================
+
+function GetNearestSafezone(coords)
+    local nearestDist = 999999.0
+    local nearestZone = nil
+
+    for id, zone in pairs(safezones) do
+        local dist = #(coords - vector3(zone.x, zone.y, zone.z))
+        if dist < nearestDist then
+            nearestDist = dist
+            nearestZone = zone
+        end
+    end
+
+    return nearestZone
+end
+
+-- Exporte la fonction pour que pvp_core puisse l'utiliser
+exports('GetNearestSafezone', GetNearestSafezone)
+exports('GetSafezones', function() return safezones end)

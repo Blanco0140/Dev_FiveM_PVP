@@ -1,0 +1,159 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    transition: background-color 0.3s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    background: linear-gradient(145deg, #111111, #1a1a1a);
+    border: 2px solid #8e0000;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(142, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(90deg, #8e0000 0%, #4a0000 100%);
+    border-bottom: 2px solid #ffd700;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    color: #ffd700;
+    font-size: 28px;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin: 0;
+}
+
+#close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+}
+
+#close-btn:hover {
+    color: #ff4444;
+    transform: scale(1.1);
+}
+
+.subtitle {
+    text-align: center;
+    padding: 10px;
+    color: #aaa;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #333;
+    background: #0a0a0a;
+}
+
+.zones-container {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Custom scrollbar */
+.zones-container::-webkit-scrollbar {
+    width: 8px;
+}
+.zones-container::-webkit-scrollbar-track {
+    background: #111;
+}
+.zones-container::-webkit-scrollbar-thumb {
+    background: #8e0000;
+    border-radius: 4px;
+}
+.zones-container::-webkit-scrollbar-thumb:hover {
+    background: #ffd700;
+}
+
+.zone-item {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-left: 4px solid #8e0000;
+    border-radius: 6px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.zone-item:hover {
+    background: #252525;
+    border-color: #555;
+    border-left-color: #ffd700;
+    transform: translateX(5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Highlight double click instruction on hover */
+.zone-item::after {
+    content: "DOUBLE-CLIQUE !";
+    position: absolute;
+    right: 20px;
+    color: #ffd700;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.zone-item:hover::after {
+    opacity: 1;
+}
+
+.zone-info h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    color: #fff;
+    font-size: 24px;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.zone-info p {
+    color: #888;
+    font-size: 13px;
+    display: flex;
+    gap: 15px;
+}
+
+.zone-info i {
+    color: #8e0000;
+    margin-right: 5px;
+}

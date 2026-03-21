@@ -77,7 +77,7 @@ Citizen.CreateThread(function()
 end)
 
 -- ==============================================
--- MARQUEUR VISUEL AU SOL (cercle vert, faible opacité)
+-- MARQUEUR VISUEL AU SOL (cercle vert)
 -- ==============================================
 
 Citizen.CreateThread(function()
@@ -89,20 +89,22 @@ Citizen.CreateThread(function()
         for id, zone in pairs(safezones) do
             local dist = #(myCoords - vector3(zone.x, zone.y, zone.z))
 
-            if dist < 200.0 then
+            if dist < 250.0 then
+                -- Cercle plat au sol
                 DrawMarker(
-                    1,
-                    zone.x, zone.y, zone.z - 1.0,
+                    25,                             -- Type 25 : cercle plat
+                    zone.x, zone.y, zone.z - 0.5,  -- Légèrement sous le sol
                     0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0,
-                    zone.radius * 2,
-                    zone.radius * 2,
-                    1.0,
-                    0, 180, 50, 15,             -- Vert très transparent (opacité 15 au lieu de 40)
+                    zone.radius * 2.0,              -- Diamètre X
+                    zone.radius * 2.0,              -- Diamètre Y
+                    2.0,                            -- Hauteur
+                    0, 200, 50, 50,                 -- Vert avec opacité 50
                     false,
-                    false, 2, nil, nil, false
+                    false, 2, false, nil, nil, false
                 )
             end
         end
     end
 end)
+

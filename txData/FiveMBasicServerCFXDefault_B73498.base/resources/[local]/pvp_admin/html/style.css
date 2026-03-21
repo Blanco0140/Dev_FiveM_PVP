@@ -295,6 +295,11 @@ body {
     border-color: rgba(100, 150, 220, 0.25);
     color: #7ac;
 }
+.btn-spec {
+    background: rgba(180, 100, 220, 0.12);
+    border-color: rgba(180, 100, 220, 0.25);
+    color: #a7d;
+}
 
 /* Message vide */
 .no-players {

@@ -74,6 +74,24 @@ Citizen.CreateThread(function()
         local ped = PlayerPedId()
 
         if IsEntityDead(ped) then
+            -- Détecte qui nous a tué
+            local killer = GetPedSourceOfDeath(ped)
+            local killerId = 0
+
+            if killer and DoesEntityExist(killer) then
+                if IsPedAPlayer(killer) then
+                    killerId = NetworkGetPlayerIndexFromPed(killer)
+                    if killerId then
+                        killerId = GetPlayerServerId(killerId)
+                    else
+                        killerId = 0
+                    end
+                end
+            end
+
+            -- Envoie l'événement au serveur pour tracker les stats
+            TriggerServerEvent('pvp_core:playerKilled', killerId)
+
             -- On attend 2 secondes pour que le joueur voie qu'il est mort
             Citizen.Wait(2000)
 

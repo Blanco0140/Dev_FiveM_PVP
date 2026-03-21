@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP Leaderboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="leaderboard" class="hidden">
+        <div class="lb-container">
+            <!-- En-tête -->
+            <div class="lb-header">
+                <div class="lb-status">⚡ LIVE SERVER</div>
+                <h1 class="lb-title">PVP LEADERBOARD</h1>
+                <button class="lb-close" onclick="closeMenu()">✕</button>
+            </div>
+
+            <!-- Stats globales -->
+            <div class="lb-stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">JOUEURS EN LIGNE</span>
+                    <span class="stat-value" id="stat-online">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">TOTAL JOUEURS</span>
+                    <span class="stat-value" id="stat-total">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">TOTAL KILLS</span>
+                    <span class="stat-value" id="stat-kills">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">TOP K/D RATIO</span>
+                    <span class="stat-value stat-gold" id="stat-topkd">0</span>
+                </div>
+            </div>
+
+            <!-- Mes stats perso -->
+            <div class="my-stats" id="my-stats"></div>
+
+            <!-- Classement -->
+            <div class="lb-section-title">🏆 CLASSEMENT</div>
+
+            <!-- Barre de recherche -->
+            <div class="lb-search">
+                <input type="text" id="lb-search-input" placeholder="🔍  Rechercher un joueur..." oninput="filterLeaderboard()">
+            </div>
+
+            <!-- En-tête tableau -->
+            <div class="lb-table-header">
+                <span class="lb-col-rank">#</span>
+                <span class="lb-col-name">JOUEUR</span>
+                <span class="lb-col-kills">KILLS</span>
+                <span class="lb-col-kd">K/D</span>
+            </div>
+
+            <!-- Liste -->
+            <div id="lb-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

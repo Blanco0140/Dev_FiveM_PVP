@@ -1,10 +1,13 @@
--- Ce code s'exécute côté serveur (pour la sécurité et la base de données)
+-- ==============================================
+-- PVP CORE - server.lua
+-- Gestion des joueurs, kills, morts, stats
+-- ==============================================
 
+-- Quand un joueur se connecte, on le crée en BDD s'il n'existe pas
 AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     local player = source
     local identifier = nil
 
-    -- On cherche la licence Rockstar du joueur (son identifiant unique)
     for k, v in ipairs(GetPlayerIdentifiers(player)) do
         if string.match(v, 'license:') then
             identifier = v
@@ -13,19 +16,130 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     end
 
     if identifier then
-        -- On interroge la base de données pour voir s'il y est déjà
         local exist = MySQL.query.await('SELECT identifier FROM users WHERE identifier = ?', {identifier})
-        
-        -- S'il n'y est pas (c'est sa toute première connexion au serveur)
+
         if not exist[1] then
-            -- On l'ajoute ! L'argent et l'XP se mettent à 0 automatiquement
-            MySQL.insert.await('INSERT INTO users (identifier) VALUES (?)', {identifier})
-            print('^2[PVP] Nouveau joueur enregistre en base de donnees : ' .. name .. '^7')
+            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths) VALUES (?, ?, 0, 0)', {identifier, name})
+            print('^2[PVP] Nouveau joueur enregistre : ' .. name .. '^7')
         else
-            -- S'il existe déjà
+            -- Met à jour le nom au cas où il a changé
+            MySQL.update.await('UPDATE users SET name = ? WHERE identifier = ?', {name, identifier})
             print('^4[PVP] Connexion d un joueur connu : ' .. name .. '^7')
         end
     else
-        print('^1[PVP] Erreur : Impossible de trouver la licence Rockstar du joueur ' .. name .. '^7')
+        print('^1[PVP] Erreur : Impossible de trouver la licence du joueur ' .. name .. '^7')
     end
+end)
+
+
+-- ==============================================
+-- TRACKING DES KILLS / MORTS
+-- ==============================================
+
+-- Quand un joueur meurt (envoyé par le client)
+RegisterNetEvent('pvp_core:playerKilled')
+AddEventHandler('pvp_core:playerKilled', function(killerId)
+    local victimId = source
+    local victimIdentifier = nil
+    local killerIdentifier = nil
+
+    -- Identifier de la victime
+    for k, v in ipairs(GetPlayerIdentifiers(victimId)) do
+        if string.match(v, 'license:') then
+            victimIdentifier = v
+            break
+        end
+    end
+
+    -- Ajoute un mort à la victime
+    if victimIdentifier then
+        MySQL.update('UPDATE users SET deaths = deaths + 1 WHERE identifier = ?', {victimIdentifier})
+    end
+
+    -- Si un tueur est identifié, ajoute un kill
+    if killerId and killerId > 0 then
+        for k, v in ipairs(GetPlayerIdentifiers(killerId)) do
+            if string.match(v, 'license:') then
+                killerIdentifier = v
+                break
+            end
+        end
+
+        if killerIdentifier then
+            MySQL.update('UPDATE users SET kills = kills + 1 WHERE identifier = ?', {killerIdentifier})
+        end
+    end
+end)
+
+
+-- ==============================================
+-- LEADERBOARD - Données pour le classement
+-- ==============================================
+
+RegisterNetEvent('pvp_leaderboard:requestStats')
+AddEventHandler('pvp_leaderboard:requestStats', function()
+    local requesterId = source
+
+    -- Récupère le top 20 des joueurs triés par kills
+    local topPlayers = MySQL.query.await('SELECT name, kills, deaths FROM users ORDER BY kills DESC LIMIT 20')
+
+    -- Récupère le nombre total de joueurs en BDD
+    local totalResult = MySQL.query.await('SELECT COUNT(*) as total FROM users')
+    local totalPlayers = totalResult and totalResult[1] and totalResult[1].total or 0
+
+    -- Récupère le total de kills aujourd'hui (approximatif, basé sur le total)
+    local totalKillsResult = MySQL.query.await('SELECT SUM(kills) as total FROM users')
+    local totalKills = totalKillsResult and totalKillsResult[1] and totalKillsResult[1].total or 0
+
+    -- Joueurs en ligne
+    local onlinePlayers = GetPlayers()
+    local onlineCount = #onlinePlayers
+
+    -- Récupère les identifiants des joueurs en ligne pour marquer le statut
+    local onlineIdentifiers = {}
+    for _, pid in ipairs(onlinePlayers) do
+        for k, v in ipairs(GetPlayerIdentifiers(tonumber(pid))) do
+            if string.match(v, 'license:') then
+                onlineIdentifiers[v] = true
+                break
+            end
+        end
+    end
+
+    -- Récupère les stats du joueur qui demande
+    local myIdentifier = nil
+    for k, v in ipairs(GetPlayerIdentifiers(requesterId)) do
+        if string.match(v, 'license:') then
+            myIdentifier = v
+            break
+        end
+    end
+    local myStats = nil
+    if myIdentifier then
+        local result = MySQL.query.await('SELECT name, kills, deaths FROM users WHERE identifier = ?', {myIdentifier})
+        if result and result[1] then
+            myStats = result[1]
+        end
+    end
+
+    -- Trouve le meilleur KD
+    local topKD = 0
+    if topPlayers then
+        for _, p in ipairs(topPlayers) do
+            local deaths = p.deaths or 0
+            if deaths == 0 then deaths = 1 end
+            local kd = (p.kills or 0) / deaths
+            if kd > topKD then topKD = kd end
+        end
+    end
+
+    TriggerClientEvent('pvp_leaderboard:receiveStats', requesterId, {
+        players = topPlayers or {},
+        totalPlayers = totalPlayers,
+        onlineCount = onlineCount,
+        totalKills = totalKills,
+        topKD = math.floor(topKD * 10) / 10,
+        myStats = myStats,
+        onlineIdentifiers = onlineIdentifiers
+    })
 end)

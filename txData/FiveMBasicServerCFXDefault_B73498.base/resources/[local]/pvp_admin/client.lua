@@ -90,9 +90,89 @@ end, true) -- admin seulement
 
 RegisterKeyMapping('tpm', 'Teleport au marqueur GPS', 'keyboard', 'F7')
 
+-- /spectate [id] : Observer un joueur (vue caméra)
+local spectating = {}  -- table pour savoir qui spectate qui
+
+RegisterCommand('spectate', function()
+    -- Toggle spectate - si on spectate déjà, on arrête
+    TriggerEvent('pvp_admin:toggleSpectate')
+end, true)
+
+-- /getcoord : Copie les coordonnées actuelles dans le presse-papier
+RegisterCommand('getcoord', function()
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+    local coordStr = string.format("%.4f, %.4f, %.4f (heading: %.2f)", coords.x, coords.y, coords.z, heading)
+    -- Envoie au NUI pour copier dans le presse-papier
+    SendNUIMessage({ type = 'copyCoords', coords = coordStr })
+    TriggerEvent('chat:addMessage', { color = {0,255,0}, args = {'[ADMIN]', 'Coordonnées copiées : ' .. coordStr} })
+end, true)
+
+RegisterKeyMapping('getcoord', 'Copier mes coordonnées', 'keyboard', 'F8')
+
 
 -- ==============================================
--- MENU JOUEURS (F9) - Interface NUI
+-- SPECTATE - Mode observation
+-- ==============================================
+
+local isSpectating = false
+local spectateTarget = -1
+
+AddEventHandler('pvp_admin:toggleSpectate', function()
+    if isSpectating then
+        -- Arrêter le spectate
+        isSpectating = false
+        local ped = PlayerPedId()
+        NetworkSetInSpectatorMode(false, ped)
+        SetEntityVisible(ped, true, false)
+        SetEntityCollision(ped, true, true)
+        TriggerEvent('chat:addMessage', { color = {255,165,0}, args = {'[ADMIN]', 'Mode spectateur DÉSACTIVÉ'} })
+    else
+        -- Demander quel joueur spectater
+        TriggerEvent('chat:addMessage', { color = {255,165,0}, args = {'[ADMIN]', 'Utilise /spec [id] pour observer un joueur'} })
+    end
+end)
+
+RegisterCommand('spec', function(source, args)
+    if #args < 1 then
+        TriggerEvent('chat:addMessage', { color = {255,0,0}, args = {'[ADMIN]', 'Utilisation : /spec [id]'} })
+        return
+    end
+
+    local targetServerId = tonumber(args[1])
+    if not targetServerId then
+        TriggerEvent('chat:addMessage', { color = {255,0,0}, args = {'[ADMIN]', 'ID invalide !'} })
+        return
+    end
+
+    -- Cherche le joueur local qui correspond à cet ID serveur
+    local targetPlayer = GetPlayerFromServerId(targetServerId)
+    if targetPlayer == -1 or targetPlayer == PlayerId() then
+        TriggerEvent('chat:addMessage', { color = {255,0,0}, args = {'[ADMIN]', 'Joueur introuvable ou c\'est toi !'} })
+        return
+    end
+
+    local targetPed = GetPlayerPed(targetPlayer)
+    if not DoesEntityExist(targetPed) then
+        TriggerEvent('chat:addMessage', { color = {255,0,0}, args = {'[ADMIN]', 'Le joueur n\'est pas disponible'} })
+        return
+    end
+
+    isSpectating = true
+    spectateTarget = targetPlayer
+    local myPed = PlayerPedId()
+
+    -- Rend invisible et active le mode spectateur
+    SetEntityVisible(myPed, false, false)
+    SetEntityCollision(myPed, false, false)
+    NetworkSetInSpectatorMode(true, targetPed)
+
+    TriggerEvent('chat:addMessage', { color = {0,255,0}, args = {'[ADMIN]', 'Mode spectateur sur le joueur ID: ' .. targetServerId .. ' (tape /spectate pour arrêter)'} })
+end, true)
+
+
+
 -- ==============================================
 
 

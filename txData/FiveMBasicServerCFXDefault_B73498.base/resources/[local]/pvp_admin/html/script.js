@@ -22,6 +22,19 @@ window.addEventListener('message', function(event) {
     if (data.type === 'close') {
         document.getElementById('player-menu').classList.add('hidden');
     }
+
+    // Copier les coordonnées dans le presse-papier
+    if (data.type === 'copyCoords') {
+        navigator.clipboard.writeText(data.coords).catch(function() {
+            // Fallback si clipboard API ne marche pas
+            const textarea = document.createElement('textarea');
+            textarea.value = data.coords;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        });
+    }
 });
 
 // Ferme avec Echap
@@ -83,6 +96,7 @@ function renderPlayers(players) {
                     <button class="action-btn btn-heal" onclick="doAction('heal ${player.id}')">HEAL</button>
                     <button class="action-btn btn-revive" onclick="doAction('revive ${player.id}')">REVIVE</button>
                     <button class="action-btn btn-freeze" onclick="doAction('freeze ${player.id}')">FREEZE</button>
+                    <button class="action-btn btn-spec" onclick="doAction('spec ${player.id}')">SPEC</button>
                     <button class="action-btn btn-kill" onclick="doAction('kill ${player.id}')">KILL</button>
                     <button class="action-btn btn-kick" onclick="doAction('kick ${player.id}')">KICK</button>
                     <button class="action-btn btn-ban" onclick="doAction('ban ${player.id}')">BAN</button>

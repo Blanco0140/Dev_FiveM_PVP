@@ -6,6 +6,16 @@
 -- Configuration du webhook
 local webhookUrl = "https://discord.com/api/webhooks/1485080990572609556/iBi0Ivv1repYwCZdbDIIyX75IKHnFPMlDa6YJIF4isiRqt6dk5oAy47vFZeTmMMoVMYI"
 
+Citizen.CreateThread(function()
+    Wait(1500)
+    MySQL.query('SHOW COLUMNS FROM `users` LIKE "points"', {}, function(result)
+        if not result or #result == 0 then
+            MySQL.query('ALTER TABLE `users` ADD COLUMN `points` INT(11) NOT NULL DEFAULT 0')
+            print('^2[PVP CORE] Colonne "points" ajoutee a la table users.^7')
+        end
+    end)
+end)
+
 function SendDiscordLog(name, isNew, ids)
     local color = isNew and 3066993 or 3447003 -- Vert si nouveau, Bleu si connu
     local status = isNew and "s'est connecté (Nouveau joueur)" or "s'est connecté"
@@ -52,7 +62,7 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
         local exist = MySQL.query.await('SELECT identifier FROM users WHERE identifier = ?', {ids.license})
 
         if not exist[1] then
-            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths) VALUES (?, ?, 0, 0)', {ids.license, name})
+            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths, points) VALUES (?, ?, 0, 0, 0)', {ids.license, name})
             print('^2[PVP] Nouveau joueur : ' .. name .. ' | Sa licence est -> ^3' .. ids.license .. '^7')
             SendDiscordLog(name, true, ids)
         else
@@ -179,3 +189,42 @@ AddEventHandler('pvp_leaderboard:requestStats', function()
     end
 end)
 
+-- ==============================================
+-- EXPORTS DE POINTS (MONNAIE)
+-- ==============================================
+
+function GetPlayerLicense(source)
+    for _, v in ipairs(GetPlayerIdentifiers(source)) do
+        if string.match(v, 'license:') then
+            return v
+        end
+    end
+    return nil
+end
+
+exports('GetPlayerPoints', function(source)
+    local identifier = GetPlayerLicense(source)
+    if identifier then
+        local result = MySQL.query.await('SELECT points FROM users WHERE identifier = ?', {identifier})
+        if result and result[1] then
+            return result[1].points or 0
+        end
+    end
+    return 0
+end)
+
+exports('AddPlayerPoints', function(source, amount)
+    local identifier = GetPlayerLicense(source)
+    local amt = tonumber(amount)
+    if identifier and amt and amt > 0 then
+        MySQL.update.await('UPDATE users SET points = points + ? WHERE identifier = ?', {amt, identifier})
+    end
+end)
+
+exports('RemovePlayerPoints', function(source, amount)
+    local identifier = GetPlayerLicense(source)
+    local amt = tonumber(amount)
+    if identifier and amt and amt > 0 then
+        MySQL.update.await('UPDATE users SET points = GREATEST(0, points - ?) WHERE identifier = ?', {amt, identifier})
+    end
+end)

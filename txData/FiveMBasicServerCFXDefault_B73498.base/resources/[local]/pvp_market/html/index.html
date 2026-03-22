@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP Market</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="background: transparent !important; background-color: transparent !important;">
+
+    <div id="app" class="hidden">
+        <div class="overlay">
+            
+            <div class="market-panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">MARCHÉ NOIR</div>
+                        <div class="panel-subtitle">Armement et équipements illégaux</div>
+                    </div>
+                    <div class="points-badge">
+                        <span class="pt-icon">★</span>
+                        <span class="pt-val" id="myPoints">--</span>
+                    </div>
+                    <button class="close-btn" id="closeBtn">✖</button>
+                </div>
+
+                <div class="panel-nav">
+                    <button class="nav-btn active" data-tab="buy">ACHETER</button>
+                    <button class="nav-btn" data-tab="sell">VENDRE</button>
+                </div>
+
+                <div class="panel-content">
+                    
+                    <!-- ACHAT -->
+                    <div id="tab-buy" class="tab active">
+                        <div class="items-grid" id="buyGrid">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+
+                    <!-- VENTE -->
+                    <div id="tab-sell" class="tab">
+                        <div class="items-grid" id="sellGrid">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- NOTIFS -->
+    <div id="notifs"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

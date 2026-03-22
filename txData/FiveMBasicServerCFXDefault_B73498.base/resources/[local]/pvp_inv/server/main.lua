@@ -113,3 +113,9 @@ RegisterNetEvent('pvp_inv:declineTrade', function(tradeId)
 end)
 
 RegisterNetEvent('pvp_inv:dropWeapon', function(_) end)
+
+RegisterNetEvent('pvp_inv:requestPoints', function()
+    local src = source
+    local pts = exports.pvp_core:GetPlayerPoints(src)
+    TriggerClientEvent('pvp_inv:receivePoints', src, pts)
+end)

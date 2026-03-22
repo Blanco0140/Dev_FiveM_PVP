@@ -87,6 +87,7 @@ function imgHTML(name) {
 window.addEventListener('message', ({ data }) => {
     switch (data.action) {
         case 'openInventory': openInventory(data);                              break;
+        case 'setPoints':     if(document.getElementById('myPoints')) document.getElementById('myPoints').textContent = data.points; break;
         case 'notification':  showNotif(data.msg, data.ntype || 'info');        break;
         case 'tradeRequest':  showTradeModal(data);                             break;
         case 'tradeAccepted':

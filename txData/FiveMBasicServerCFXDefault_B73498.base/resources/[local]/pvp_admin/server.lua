@@ -336,3 +336,27 @@ RegisterCommand('giveweapon', function(source, args)
     
     TriggerClientEvent('pvp_admin:giveWeapon', adminId, weaponName, ammo)
 end, true)
+
+-- /givepoints [id] [montant] : Donner des points pour le marché
+RegisterCommand('givepoints', function(source, args)
+    if source == 0 then return end
+    if not IsPlayerAceAllowed(source, "command") then
+        TriggerClientEvent('chat:addMessage', source, { args = { '^1Admin', 'Vous n\'avez pas la permission.' } })
+        return
+    end
+
+    local targetId = tonumber(args[1])
+    local amount = tonumber(args[2])
+
+    if targetId and amount and amount > 0 then
+        exports.pvp_core:AddPlayerPoints(targetId, amount)
+        TriggerClientEvent('chat:addMessage', source, { args = { '^2Admin', 'Vous avez donne '..amount..' points a l\'ID '..targetId } })
+        TriggerClientEvent('chat:addMessage', targetId, { args = { '^2Admin', 'Un administrateur vous a donne '..amount..' points !' } })
+        
+        -- On force la mise a jour visuelle si le menu du joueur est ouvert
+        local currentPoints = exports.pvp_core:GetPlayerPoints(targetId)
+        TriggerClientEvent('pvp_market:updatePoints', targetId, currentPoints)
+    else
+        TriggerClientEvent('chat:addMessage', source, { args = { '^1Usage', '/givepoints [ID] [Montant]' } })
+    end
+end, false)

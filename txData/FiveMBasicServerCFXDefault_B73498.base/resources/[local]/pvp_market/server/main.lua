@@ -89,7 +89,9 @@ RegisterNetEvent('pvp_market:buyWeapon', function(weaponHash)
     local currentPoints = exports.pvp_core:GetPlayerPoints(src)
     if currentPoints >= price then
         exports.pvp_core:RemovePlayerPoints(src, price)
-        GiveWeaponToPed(GetPlayerPed(src), wHash, 250, false, false)
+        -- On utilise l'event de pvp_inv pour que l'arme soit notifiée et reçue proprement
+        TriggerClientEvent('pvp_inv:receiveWeapon', src, "Le Marché", wHash, 250)
+        
         TriggerClientEvent('pvp_market:notify', src, 'success', 'Vous avez acheté : ' .. wName .. ' pour '..price..' points.')
         TriggerClientEvent('pvp_market:updatePoints', src, currentPoints - price)
     else

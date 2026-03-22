@@ -96,6 +96,7 @@ end)
 function OpenInventory()
     inventoryOpen = true
     SetTimecycleModifier('hud_def_blur')
+    TriggerServerEvent('pvp_inv:requestPoints')
     local ped     = GetPed()
     local weapons = {}
     local wCount  = 0
@@ -257,6 +258,10 @@ end)
 local function notify(msg, ntype)
     SendNUIMessage({ action = 'notification', msg = msg, ntype = ntype })
 end
+
+RegisterNetEvent('pvp_inv:receivePoints', function(pts)
+    SendNUIMessage({ action = 'setPoints', points = pts })
+end)
 
 RegisterNetEvent('pvp_inv:receiveWeapon', function(fromName, weaponHash, ammo)
     GiveWeaponToPed(GetPed(), weaponHash, ammo, false, false)

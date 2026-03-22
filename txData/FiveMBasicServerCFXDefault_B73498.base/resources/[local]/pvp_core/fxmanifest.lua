@@ -13,3 +13,7 @@ client_scripts {
     'client.lua'
 }
 
+export 'GetPlayerPoints'
+export 'AddPlayerPoints'
+export 'RemovePlayerPoints'
+

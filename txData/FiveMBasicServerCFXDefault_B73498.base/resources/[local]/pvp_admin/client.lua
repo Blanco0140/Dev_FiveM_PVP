@@ -427,8 +427,8 @@ end)
 -- ==============================================
 
 -- /car [modele] : Fait spawn un véhicule
-RegisterCommand('car', function(source, args)
-    local modelName = args[1] or 'adder'
+RegisterNetEvent('pvp_admin:spawnCar')
+AddEventHandler('pvp_admin:spawnCar', function(modelName)
     local modelHash = GetHashKey(modelName)
 
     if not IsModelInCdimage(modelHash) or not IsModelAVehicle(modelHash) then
@@ -450,18 +450,11 @@ RegisterCommand('car', function(source, args)
     
     SetModelAsNoLongerNeeded(modelHash)
     TriggerEvent('chat:addMessage', { color = {0, 255, 0}, args = {'[ADMIN]', 'Vehicule ' .. modelName .. ' spawne.'} })
-end, true) -- true = admin
+end)
 
 -- /giveweapon [nom_arme] [munitions] : Se donner une arme
-RegisterCommand('giveweapon', function(source, args)
-    local weaponName = args[1]
-    local ammo = tonumber(args[2]) or 250
-
-    if not weaponName then
-        TriggerEvent('chat:addMessage', { color = {255, 0, 0}, args = {'[ADMIN]', 'Utilisation : /giveweapon [nom_arme] [munitions]'} })
-        return
-    end
-    
+RegisterNetEvent('pvp_admin:giveWeapon')
+AddEventHandler('pvp_admin:giveWeapon', function(weaponName, ammo)
     weaponName = string.upper(weaponName)
     if not string.find(weaponName, "WEAPON_") then
         weaponName = "WEAPON_" .. weaponName
@@ -472,4 +465,4 @@ RegisterCommand('giveweapon', function(source, args)
 
     GiveWeaponToPed(ped, weaponHash, ammo, false, true)
     TriggerEvent('chat:addMessage', { color = {0, 255, 0}, args = {'[ADMIN]', 'Arme reçue : ' .. weaponName .. ' (' .. ammo .. ' balles)'} })
-end, true) -- true = admin
+end)

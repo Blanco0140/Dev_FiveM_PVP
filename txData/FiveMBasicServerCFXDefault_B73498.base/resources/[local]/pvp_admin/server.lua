@@ -310,3 +310,29 @@ AddEventHandler('pvp_admin:requestPlayers', function()
     -- Renvoie la liste au client qui l'a demandée
     TriggerClientEvent('pvp_admin:receivePlayers', adminId, playerList)
 end)
+
+
+-- ==============================================
+-- VEHICULES ET ARMES (Admin)
+-- ==============================================
+
+-- /car [modele] : Fait spawn un véhicule (côté client)
+RegisterCommand('car', function(source, args)
+    local adminId = source
+    local modelName = args[1] or 'adder'
+    TriggerClientEvent('pvp_admin:spawnCar', adminId, modelName)
+end, true)
+
+-- /giveweapon [nom_arme] [munitions] : Se donner une arme (côté client)
+RegisterCommand('giveweapon', function(source, args)
+    local adminId = source
+    local weaponName = args[1]
+    local ammo = tonumber(args[2]) or 250
+
+    if not weaponName then
+        TriggerClientEvent('chat:addMessage', adminId, { color = {255, 0, 0}, args = {'[ADMIN]', 'Utilisation : /giveweapon [nom_arme] [munitions]'} })
+        return
+    end
+    
+    TriggerClientEvent('pvp_admin:giveWeapon', adminId, weaponName, ammo)
+end, true)

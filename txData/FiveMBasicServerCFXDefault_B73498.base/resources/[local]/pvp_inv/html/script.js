@@ -28,7 +28,7 @@ let notifQ         = [];
 let dragItem       = null;
 let dragOriginEl   = null;
 
-function getImg(name) { return `nui://${GetParentResourceName()}/html/img/Weapons/${name}.png`; }
+function getImg(name) { return `img/Weapons/${name.replace(/ /g, '%20')}.png`; }
 
 function imgHTML(name) {
     const src = getImg(name);

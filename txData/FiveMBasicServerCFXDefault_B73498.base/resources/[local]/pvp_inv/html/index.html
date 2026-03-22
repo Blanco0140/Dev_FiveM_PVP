@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Shortcut bar HUD (caché via CSS) -->
+<div id="shortcutBar" class="shortcut-bar hidden">
+  <div class="sc-label">RACCOURCIS</div>
+  <div class="sc-slots" id="scSlots">
+    <div class="sc-slot" data-slot="1"><div class="sc-num">1</div><div class="sc-name">—</div></div>
+    <div class="sc-slot" data-slot="2"><div class="sc-num">2</div><div class="sc-name">—</div></div>
+    <div class="sc-slot" data-slot="3"><div class="sc-num">3</div><div class="sc-name">—</div></div>
+    <div class="sc-slot" data-slot="4"><div class="sc-num">4</div><div class="sc-name">—</div></div>
+    <div class="sc-slot" data-slot="5"><div class="sc-num">5</div><div class="sc-name">—</div></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="overlay">
+
+    <!-- WATERMARK -->
+    <div class="watermark">
+      <div class="watermark-hex">⬡</div>
+      <div class="watermark-name">ASHFALL</div>
+      <div class="watermark-pvp">PVP</div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-hex">⬡</div>
+        <div class="brand-text">
+          <span class="brand-name">ASHFALL</span>
+          <span class="brand-pvp">PVP</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-tab="inventory">
+          <span class="nav-ico">📦</span> Inventaire
+        </div>
+        <div class="nav-item" data-tab="trade">
+          <span class="nav-ico">🔄</span> Trade / Don
+        </div>
+      </nav>
+    </div>
+
+    <!-- MAIN -->
+    <div class="content">
+
+      <!-- INVENTAIRE -->
+      <div id="tab-inventory" class="tab active">
+        <div class="content-header">
+          <div class="breadcrumb">Menu <span class="bc-sep">/</span> <span class="bc-active">Inventaire</span></div>
+          <button class="close-x" id="closeBtn">✕</button>
+        </div>
+        <div class="section-title"><div class="section-bar"></div>INVENTAIRE</div>
+        <div class="bag-header">
+          <span class="bag-label">MON SAC</span>
+          <span class="bag-weight" id="bagWeight">0 arme(s)</span>
+        </div>
+        <div class="items-grid" id="weaponsGrid">
+          <div class="empty-msg">Aucune arme dans l'inventaire</div>
+        </div>
+        <div class="section-title" style="margin-top:10px">
+          <div class="section-bar"></div>RACCOURCIS
+          <span class="sc-hint">Glisser une arme • Survole + touche 1-5 • Clic droit pour vider</span>
+        </div>
+        <div class="shortcut-grid" id="shortcutGrid">
+          <div class="sc-inv-slot" data-slot="1"><div class="sc-inv-num">1</div><div class="sc-inv-content"><div class="sc-inv-empty">Glisser une arme</div></div></div>
+          <div class="sc-inv-slot" data-slot="2"><div class="sc-inv-num">2</div><div class="sc-inv-content"><div class="sc-inv-empty">Glisser une arme</div></div></div>
+          <div class="sc-inv-slot" data-slot="3"><div class="sc-inv-num">3</div><div class="sc-inv-content"><div class="sc-inv-empty">Glisser une arme</div></div></div>
+          <div class="sc-inv-slot" data-slot="4"><div class="sc-inv-num">4</div><div class="sc-inv-content"><div class="sc-inv-empty">Glisser une arme</div></div></div>
+          <div class="sc-inv-slot" data-slot="5"><div class="sc-inv-num">5</div><div class="sc-inv-content"><div class="sc-inv-empty">Glisser une arme</div></div></div>
+        </div>
+      </div>
+
+      <!-- TRADE -->
+      <div id="tab-trade" class="tab">
+        <div class="content-header">
+          <div class="breadcrumb">Menu <span class="bc-sep">/</span> <span class="bc-active">Trade / Don</span></div>
+          <button class="close-x" id="closeBtn2">✕</button>
+        </div>
+        <div class="trade-layout">
+          <div class="trade-half">
+            <div class="bag-label" style="padding:0 0 10px">MES ARMES</div>
+            <div class="items-grid small" id="tradeGrid"><div class="empty-msg">Aucune arme</div></div>
+          </div>
+          <div class="trade-half">
+            <div class="bag-label" style="padding:0 0 10px">JOUEURS PROCHES <span style="color:#555;font-size:10px">(≤10m)</span></div>
+            <div class="players-list" id="playersList"><div class="empty-msg">Aucun joueur à portée</div></div>
+            <div class="action-box hidden" id="actionBox">
+              <div class="action-info">
+                <span class="action-wname" id="actionWname">—</span>
+                <span class="action-arrow">→</span>
+                <span class="action-pname" id="actionPname">—</span>
+              </div>
+              <div class="action-row">
+                <button class="btn-give"   id="giveBtn">🎁 DONNER</button>
+                <button class="btn-trade"  id="tradeBtn">🔄 TRADE</button>
+                <button class="btn-cancel" id="cancelBtn">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TRADE MODAL -->
+<div id="tradeModal" class="trade-modal hidden">
+  <div class="tm-tag">DEMANDE DE TRADE</div>
+  <div class="tm-from" id="tmFrom">—</div>
+  <div class="tm-weapon" id="tmWeapon">—</div>
+  <div class="tm-sub">vous propose cette arme</div>
+  <div class="tm-btns">
+    <button class="btn-give"   id="acceptBtn">✓ ACCEPTER</button>
+    <button class="btn-cancel" id="declineBtn">✕ REFUSER</button>
+  </div>
+</div>
+
+<div id="notifs"></div>
+<script src="script.js"></script>
+</body>
+</html>

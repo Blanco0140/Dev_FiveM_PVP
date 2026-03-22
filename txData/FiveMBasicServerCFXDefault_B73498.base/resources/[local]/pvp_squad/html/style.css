@@ -16,11 +16,15 @@
   --radius:   4px;
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background: transparent;
+html, body {
+  background: transparent !important;
+  background-color: transparent !important;
   width: 100vw; height: 100vh;
   overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
   color: var(--text);
   font-size: 13px;
 }
@@ -115,8 +119,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.2);
   animation: fadeIn 0.15s ease;
 }
 

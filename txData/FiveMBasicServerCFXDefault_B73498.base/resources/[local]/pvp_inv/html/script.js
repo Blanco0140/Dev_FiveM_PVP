@@ -32,7 +32,7 @@ function getImg(name) { return `img/Weapons/${name.replace(/ /g, '%20')}.png`; }
 
 function imgHTML(name) {
     const src = getImg(name);
-    return `<img src="${src}" class="item-img" alt="${name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'item-fallback\\'>&#128299;</div>'">`;
+    return `<img src="${src}" class="item-img" alt="${name}" onerror="this.onerror=null; this.style.display='none';">`;
 }
 
 // ══ NUI messages ══

@@ -316,13 +316,10 @@ function render() {
 function imgHTML(name) {
   var img = document.createElement('img');
   img.className = 'item-img';
-  img.src = 'https://cfx-nui-pvp_inv/html/img/Weapons/' + name.replace(/ /g, '%20') + '.png';
+  img.src = 'nui://pvp_inv/html/img/Weapons/' + name.replace(/ /g, '%20') + '.png';
   img.alt = name;
   img.onerror = function() {
-    var fb = document.createElement('div');
-    fb.className = 'item-fallback';
-    fb.innerHTML = '&#128299;';
-    this.parentNode.replaceChild(fb, this);
+    this.style.display = 'none';
   };
   return img;
 }

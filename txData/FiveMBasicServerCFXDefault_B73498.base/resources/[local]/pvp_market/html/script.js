@@ -57,7 +57,7 @@ function renderBuy() {
     catalogData.forEach(w => {
         html += `
             <div class="weapon-card">
-                <img src="https://cfx-nui-pvp_inv/html/img/Weapons/${w.name.replace(/ /g, '%20')}.png" class="w-icon" style="object-fit: contain;" alt="${w.name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-icon\\'>&#128299;</div>'">
+                <img src="nui://pvp_inv/html/img/Weapons/${w.name.replace(/ /g, '%20')}.png" class="w-icon" style="object-fit: contain;" alt="${w.name}" onerror="this.onerror=null; this.style.display='none';">
                 <div class="w-name">${w.name}</div>
                 <div class="w-price">${w.price} ★</div>
                 <button class="btn btn-buy" onclick="buyWeapon('${w.hash}')">ACHETER</button>
@@ -76,7 +76,7 @@ function renderSell() {
     inventoryData.forEach(w => {
         html += `
             <div class="weapon-card">
-                <img src="https://cfx-nui-pvp_inv/html/img/Weapons/${w.name.replace(/ /g, '%20')}.png" class="w-icon" style="object-fit: contain;" alt="${w.name}" onerror="this.onerror=null; this.outerHTML='<div class=\\'w-icon\\'>&#128299;</div>'">
+                <img src="nui://pvp_inv/html/img/Weapons/${w.name.replace(/ /g, '%20')}.png" class="w-icon" style="object-fit: contain;" alt="${w.name}" onerror="this.onerror=null; this.style.display='none';">
                 <div class="w-name">${w.name}</div>
                 <div class="w-price sell">+${w.value} ★</div>
                 <button class="btn btn-sell" onclick="sellWeapon('${w.uuid}')">VENDRE</button>

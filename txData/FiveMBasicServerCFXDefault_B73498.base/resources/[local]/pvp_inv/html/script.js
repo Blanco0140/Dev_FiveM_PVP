@@ -204,8 +204,7 @@ function renderWeapons() {
         d.innerHTML = `
             ${imgHTML(w.name)}
             <div class="item-footer">
-                <span class="item-fname">${w.name}</span>
-                <span class="item-qty">x${w.ammo}</span>
+                <span class="item-fname" style="text-align: center; width: 100%;">${w.name}</span>
             </div>
             <div class="item-actions">
                 <button class="btn-sc" data-action="equip">ÉQUIPER</button>
@@ -228,7 +227,7 @@ function renderTradeGrid() {
         const d = document.createElement('div');
         d.className = 'item-card';
         d.dataset.index = i;
-        d.innerHTML = `${imgHTML(w.name)}<div class="item-footer"><span class="item-fname">${w.name}</span><span class="item-qty">x${w.ammo}</span></div>`;
+        d.innerHTML = `${imgHTML(w.name)}<div class="item-footer"><span class="item-fname" style="text-align: center; width: 100%;">${w.name}</span></div>`;
         frag.appendChild(d);
     });
     tradeGrid.innerHTML = '';

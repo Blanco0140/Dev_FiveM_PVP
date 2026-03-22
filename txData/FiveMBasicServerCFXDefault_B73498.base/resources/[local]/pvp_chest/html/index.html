@@ -381,9 +381,8 @@ function renderGrid(grid, items, action) {
     card.dataset.ammo   = w.ammo != null ? w.ammo : 0;
     var cat = document.createElement('div'); cat.className = 'item-cat'; cat.textContent = w.cat || '';
     var footer = document.createElement('div'); footer.className = 'item-footer';
-    var fname  = document.createElement('span'); fname.className = 'item-fname'; fname.textContent = w.name || '';
-    var qty    = document.createElement('span'); qty.className   = 'item-qty';   qty.textContent   = 'x' + (w.ammo != null ? w.ammo : 0);
-    footer.appendChild(fname); footer.appendChild(qty);
+    var fname  = document.createElement('span'); fname.className = 'item-fname'; fname.style.textAlign = 'center'; fname.style.width = '100%'; fname.textContent = w.name || '';
+    footer.appendChild(fname);
     card.appendChild(cat); card.appendChild(imgHTML(w.name)); card.appendChild(footer);
     frag.appendChild(card);
   }

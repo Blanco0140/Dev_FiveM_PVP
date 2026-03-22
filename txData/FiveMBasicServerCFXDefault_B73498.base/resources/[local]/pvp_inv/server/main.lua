@@ -33,15 +33,18 @@ end)
 
 local function LoadInventory(src)
     local identifier = GetLicense(src)
-    if not identifier then return end
-    MySQL.query('SELECT inventory FROM users WHERE identifier = ?', {identifier}, function(result)
-        if result and result[1] and result[1].inventory then
-            PlayerInventories[src] = json.decode(result[1].inventory) or {}
-        else
-            PlayerInventories[src] = {}
-        end
-        TriggerClientEvent('pvp_inv:updateInventory', src, PlayerInventories[src])
-    end)
+    if not identifier then return false end
+    
+    local result = MySQL.query.await('SELECT inventory FROM users WHERE identifier = ?', {identifier})
+    if result and result[1] and result[1].inventory then
+        PlayerInventories[src] = json.decode(result[1].inventory) or {}
+    else
+        PlayerInventories[src] = {}
+        -- Insérer dans la BDD au cas où la ligne n'est pas encore finie (sécurité)
+        MySQL.update.await('UPDATE users SET inventory = ? WHERE identifier = ?', {"[]", identifier})
+    end
+    TriggerClientEvent('pvp_inv:updateInventory', src, PlayerInventories[src])
+    return true
 end
 
 local function SaveInventory(src)
@@ -67,7 +70,10 @@ end)
 
 -- EXPORTS POUR LES AUTRES SCRIPTS
 exports('AddItem', function(src, hash, name, ammo)
-    if not PlayerInventories[src] then return false end
+    if not PlayerInventories[src] then
+        print("^3[PVP INV] Inventaire non charge pour " .. src .. ". Chargement force.^7")
+        if not LoadInventory(src) then return false end
+    end
     local u = GenerateUUID()
     table.insert(PlayerInventories[src], {
         uuid = u,
@@ -81,7 +87,9 @@ exports('AddItem', function(src, hash, name, ammo)
 end)
 
 exports('RemoveItem', function(src, uuid)
-    if not PlayerInventories[src] then return false end
+    if not PlayerInventories[src] then
+        if not LoadInventory(src) then return false end
+    end
     for i, item in ipairs(PlayerInventories[src]) do
         if item.uuid == uuid then
             table.remove(PlayerInventories[src], i)
@@ -94,10 +102,12 @@ exports('RemoveItem', function(src, uuid)
 end)
 
 exports('GetInventory', function(src)
+    if not PlayerInventories[src] then LoadInventory(src) end
     return PlayerInventories[src] or {}
 end)
 
 exports('ClearInventory', function(src)
+    if not PlayerInventories[src] then LoadInventory(src) end
     PlayerInventories[src] = {}
     SaveInventory(src)
     TriggerClientEvent('pvp_inv:updateInventory', src, PlayerInventories[src])

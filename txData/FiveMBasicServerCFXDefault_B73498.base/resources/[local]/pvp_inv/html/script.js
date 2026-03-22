@@ -28,7 +28,7 @@ let notifQ         = [];
 let dragItem       = null;
 let dragOriginEl   = null;
 
-function getImg(name) { return `https://cfx-nui-images/Weapons/${name.replace(/ /g, '%20')}.png`; }
+function getImg(name) { return `nui://images/Weapons/${name.replace(/ /g, '%20')}.png`; }
 
 function imgHTML(name) {
     const src = getImg(name);

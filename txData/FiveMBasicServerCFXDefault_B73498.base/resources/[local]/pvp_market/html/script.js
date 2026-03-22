@@ -20,7 +20,7 @@ window.addEventListener('message', ({ data }) => {
     }
 });
 
-const post = (ep, body = {}) => fetch(`https://pvp_market/${ep}`, {
+const post = (ep, body = {}) => fetch(`https://${GetParentResourceName()}/${ep}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)

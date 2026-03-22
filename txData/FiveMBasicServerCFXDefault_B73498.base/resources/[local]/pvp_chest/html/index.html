@@ -324,7 +324,7 @@ var dragOrigin = null;   // card source
 var rects      = [];     // cache getBoundingClientRect
 
 var post = function(ep, body) {
-  fetch('https://pvp_chest/' + ep, {
+  fetch('https://' + GetParentResourceName() + '/' + ep, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify(body || {})
   });

@@ -421,3 +421,55 @@ Citizen.CreateThread(function()
         end
     end
 end)
+
+-- ==============================================
+-- VEHICULE ET ARMES (Admin)
+-- ==============================================
+
+-- /car [modele] : Fait spawn un véhicule
+RegisterCommand('car', function(source, args)
+    local modelName = args[1] or 'adder'
+    local modelHash = GetHashKey(modelName)
+
+    if not IsModelInCdimage(modelHash) or not IsModelAVehicle(modelHash) then
+        TriggerEvent('chat:addMessage', { color = {255, 0, 0}, args = {'[ADMIN]', 'Modele de vehicule invalide.'} })
+        return
+    end
+
+    RequestModel(modelHash)
+    while not HasModelLoaded(modelHash) do
+        Citizen.Wait(10)
+    end
+
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+    
+    local vehicle = CreateVehicle(modelHash, coords.x, coords.y, coords.z, heading, true, false)
+    SetPedIntoVehicle(ped, vehicle, -1)
+    
+    SetModelAsNoLongerNeeded(modelHash)
+    TriggerEvent('chat:addMessage', { color = {0, 255, 0}, args = {'[ADMIN]', 'Vehicule ' .. modelName .. ' spawne.'} })
+end, true) -- true = admin
+
+-- /giveweapon [nom_arme] [munitions] : Se donner une arme
+RegisterCommand('giveweapon', function(source, args)
+    local weaponName = args[1]
+    local ammo = tonumber(args[2]) or 250
+
+    if not weaponName then
+        TriggerEvent('chat:addMessage', { color = {255, 0, 0}, args = {'[ADMIN]', 'Utilisation : /giveweapon [nom_arme] [munitions]'} })
+        return
+    end
+    
+    weaponName = string.upper(weaponName)
+    if not string.find(weaponName, "WEAPON_") then
+        weaponName = "WEAPON_" .. weaponName
+    end
+
+    local weaponHash = GetHashKey(weaponName)
+    local ped = PlayerPedId()
+
+    GiveWeaponToPed(ped, weaponHash, ammo, false, true)
+    TriggerEvent('chat:addMessage', { color = {0, 255, 0}, args = {'[ADMIN]', 'Arme reçue : ' .. weaponName .. ' (' .. ammo .. ' balles)'} })
+end, true) -- true = admin

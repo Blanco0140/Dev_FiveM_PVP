@@ -3,28 +3,63 @@
 -- Gestion des joueurs, kills, morts, stats
 -- ==============================================
 
+-- Configuration du webhook
+local webhookUrl = "https://discord.com/api/webhooks/1485080990572609556/iBi0Ivv1repYwCZdbDIIyX75IKHnFPMlDa6YJIF4isiRqt6dk5oAy47vFZeTmMMoVMYI"
+
+function SendDiscordLog(name, isNew, ids)
+    local color = isNew and 3066993 or 3447003 -- Vert si nouveau, Bleu si connu
+    local status = isNew and "s'est connecté (Nouveau joueur)" or "s'est connecté"
+    
+    local discordText = ids.discord and ("<@" .. string.gsub(ids.discord, "discord:", "") .. ">\n(" .. ids.discord .. ")") or "Non lié"
+
+    local embed = {
+        {
+            ["title"] = "🔗 Connexion : " .. name,
+            ["description"] = "**" .. name .. "** " .. status,
+            ["color"] = color,
+            ["fields"] = {
+                { ["name"] = "🎮 License Rockstar", ["value"] = ids.license or "Introuvable", ["inline"] = true },
+                { ["name"] = "💬 Discord", ["value"] = discordText, ["inline"] = true },
+                { ["name"] = "🚂 Steam", ["value"] = ids.steam or "Non lié", ["inline"] = true },
+                { ["name"] = "🌐 Adresse IP", ["value"] = "||" .. (ids.ip or "Introuvable") .. "||", ["inline"] = true }
+            },
+            ["footer"] = { ["text"] = "Ashfall PVP Logs" },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }
+    }
+
+    PerformHttpRequest(webhookUrl, function(err, text, headers) end, 'POST', json.encode({username = "Système de Connexion", avatar_url = "https://i.imgur.com/xVzJ8A9.png", embeds = embed}), { ['Content-Type'] = 'application/json' })
+end
+
 -- Quand un joueur se connecte, on le crée en BDD s'il n'existe pas
 AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     local player = source
-    local identifier = nil
+    local ids = {
+        license = nil,
+        discord = nil,
+        steam = nil,
+        ip = GetPlayerEndpoint(player)
+    }
 
-    for k, v in ipairs(GetPlayerIdentifiers(player)) do
-        if string.match(v, 'license:') then
-            identifier = v
-            break
-        end
+    for _, v in ipairs(GetPlayerIdentifiers(player)) do
+        if string.match(v, 'license:') then ids.license = v
+        elseif string.match(v, 'discord:') then ids.discord = v
+        elseif string.match(v, 'steam:') then ids.steam = v
+        elseif string.match(v, 'ip:') then ids.ip = string.gsub(v, 'ip:', '') end
     end
 
-    if identifier then
-        local exist = MySQL.query.await('SELECT identifier FROM users WHERE identifier = ?', {identifier})
+    if ids.license then
+        local exist = MySQL.query.await('SELECT identifier FROM users WHERE identifier = ?', {ids.license})
 
         if not exist[1] then
-            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths) VALUES (?, ?, 0, 0)', {identifier, name})
-            print('^2[PVP] Nouveau joueur : ' .. name .. ' | Sa licence est -> ^3' .. identifier .. '^7')
+            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths) VALUES (?, ?, 0, 0)', {ids.license, name})
+            print('^2[PVP] Nouveau joueur : ' .. name .. ' | Sa licence est -> ^3' .. ids.license .. '^7')
+            SendDiscordLog(name, true, ids)
         else
             -- Met à jour le nom au cas où il a changé
-            MySQL.update.await('UPDATE users SET name = ? WHERE identifier = ?', {name, identifier})
-            print('^4[PVP] Joueur connu : ' .. name .. ' | Sa licence est -> ^3' .. identifier .. '^7')
+            MySQL.update.await('UPDATE users SET name = ? WHERE identifier = ?', {name, ids.license})
+            print('^4[PVP] Joueur connu : ' .. name .. ' | Sa licence est -> ^3' .. ids.license .. '^7')
+            SendDiscordLog(name, false, ids)
         end
     else
         print('^1[PVP] Erreur : Impossible de trouver la licence du joueur ' .. name .. '^7')

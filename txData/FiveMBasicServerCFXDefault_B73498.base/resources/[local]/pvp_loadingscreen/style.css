@@ -118,6 +118,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    margin-top: 35vh; /* Pousse le texte de chargement vers le bas */
 }
 
 /* Texte "CONNEXION AU SERVEUR..." */

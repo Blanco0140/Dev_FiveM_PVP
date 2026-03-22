@@ -28,11 +28,11 @@ let notifQ         = [];
 let dragItem       = null;
 let dragOriginEl   = null;
 
-function getImg(name) { return `nui://images/Weapons/${name.replace(/ /g, '%20')}.png`; }
+function getImg(hash) { return `nui://images/Weapons/${hash}.png`; }
 
-function imgHTML(name) {
-    const src = getImg(name);
-    return `<img src="${src}" class="item-img" alt="${name}" onerror="this.onerror=null; this.style.display='none';">`;
+function imgHTML(hash, altName) {
+    const src = getImg(hash);
+    return `<img src="${src}" class="item-img" alt="${altName || hash}" onerror="this.onerror=null; this.style.display='none';">`;
 }
 
 // ══ NUI messages ══
@@ -154,7 +154,7 @@ function renderWeapons() {
         d.className = 'item-card';
         d.dataset.index = i;
         d.innerHTML = `
-            ${imgHTML(w.name)}
+            ${imgHTML(w.hash, w.name)}
             <div class="item-footer">
                 <span class="item-fname" style="text-align: center; width: 100%;">${w.name}</span>
             </div>
@@ -179,7 +179,7 @@ function renderTradeGrid() {
         const d = document.createElement('div');
         d.className = 'item-card';
         d.dataset.index = i;
-        d.innerHTML = `${imgHTML(w.name)}<div class="item-footer"><span class="item-fname" style="text-align: center; width: 100%;">${w.name}</span></div>`;
+        d.innerHTML = `${imgHTML(w.hash, w.name)}<div class="item-footer"><span class="item-fname" style="text-align: center; width: 100%;">${w.name}</span></div>`;
         frag.appendChild(d);
     });
     tradeGrid.innerHTML = '';
@@ -193,7 +193,7 @@ function renderShortcutGrid() {
         const content = slot.querySelector('.sc-inv-content');
         slot.classList.toggle('filled', !!sc);
         if (sc) {
-            const src = getImg(sc.name);
+            const src = getImg(sc.hash);
             content.innerHTML = src
                 ? `<img src="${src}" class="sc-img" alt="${sc.name}"><div class="sc-inv-name">${sc.name}</div>`
                 : `<div class="sc-inv-emoji">🔫</div><div class="sc-inv-name">${sc.name}</div>`;

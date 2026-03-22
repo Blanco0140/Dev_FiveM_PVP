@@ -1,91 +1,109 @@
 -- ================================================
---  PVP INVENTORY - Client FINAL
+--  PVP INVENTORY - Client (UUID VERSION)
 -- ================================================
 
 local inventoryOpen = false
 local myPlayerId    = PlayerId()
-local myPedCache    = nil
-local pedCacheTick  = 0
 
--- shortcuts[1..5] = hash (number) ou nil
-local shortcuts = {}
+local MyInventory   = {}
+local EquippedUUID  = nil
 
-local function GetPed()
-    local tick = GetGameTimer()
-    if tick - pedCacheTick > 1000 then
-        myPedCache   = PlayerPedId()
-        pedCacheTick = tick
+local shortcuts     = {} -- 1..5 = uuid
+
+local UNARMED = GetHashKey("weapon_unarmed")
+local WHEEL_CONTROLS = { 157, 158, 159, 160, 161, 162, 163, 164, 165 }
+
+-- ================================================
+-- INITIALISATION 
+-- ================================================
+CreateThread(function()
+    Wait(2000)
+    TriggerServerEvent('pvp_inv:requestData')
+end)
+
+RegisterNetEvent('pvp_inv:updateInventory', function(inv)
+    MyInventory = inv
+    
+    -- Verification : l'arme equipee existe-t-elle toujours ?
+    if EquippedUUID then
+        local found = false
+        for _, it in ipairs(MyInventory) do
+            if it.uuid == EquippedUUID then found = true break end
+        end
+        if not found then
+            SetCurrentPedWeapon(PlayerPedId(), UNARMED, true)
+            EquippedUUID = nil
+        end
     end
-    return myPedCache
+
+    if inventoryOpen then
+        RefreshUI()
+    end
+end)
+
+-- ================================================
+-- SYSTEME D'EQUIPEMENT (UUID)
+-- ================================================
+local function SaveCurrentAmmo()
+    if not EquippedUUID then return end
+    local ped = PlayerPedId()
+    for _, item in ipairs(MyInventory) do
+        if item.uuid == EquippedUUID then
+            local _, clip = GetAmmoInClip(ped, item.hash)
+            local ammo = GetAmmoInPedWeapon(ped, item.hash)
+            TriggerServerEvent('pvp_inv:updateItemAmmo', item.uuid, ammo)
+            item.ammo = ammo
+            break
+        end
+    end
 end
 
-local weaponData = {
-    [GetHashKey("weapon_pistol")]            = { name = "Pistolet",           cat = "Pistolets" },
-    [GetHashKey("weapon_pistol_mk2")]        = { name = "Pistolet MK2",       cat = "Pistolets" },
-    [GetHashKey("weapon_combatpistol")]      = { name = "Pistolet Combat",    cat = "Pistolets" },
-    [GetHashKey("weapon_appistol")]          = { name = "Pistolet AP",        cat = "Pistolets" },
-    [GetHashKey("weapon_heavypistol")]       = { name = "Pistolet Lourd",     cat = "Pistolets" },
-    [GetHashKey("weapon_snspistol")]         = { name = "Pistolet SNS",       cat = "Pistolets" },
-    [GetHashKey("weapon_microsmg")]          = { name = "Micro SMG",          cat = "SMG" },
-    [GetHashKey("weapon_smg")]               = { name = "SMG",                cat = "SMG" },
-    [GetHashKey("weapon_smg_mk2")]           = { name = "SMG MK2",            cat = "SMG" },
-    [GetHashKey("weapon_assaultsmg")]        = { name = "SMG Assault",        cat = "SMG" },
-    [GetHashKey("weapon_combatpdw")]         = { name = "PDW Combat",         cat = "SMG" },
-    [GetHashKey("weapon_assaultrifle")]      = { name = "Fusil d'assaut",     cat = "Fusils" },
-    [GetHashKey("weapon_assaultrifle_mk2")]  = { name = "Fusil d'assaut MK2", cat = "Fusils" },
-    [GetHashKey("weapon_carbinerifle")]      = { name = "Carabine",           cat = "Fusils" },
-    [GetHashKey("weapon_carbinerifle_mk2")]  = { name = "Carabine MK2",       cat = "Fusils" },
-    [GetHashKey("weapon_advancedrifle")]     = { name = "Fusil Avancé",       cat = "Fusils" },
-    [GetHashKey("weapon_specialcarbine")]    = { name = "Carabine Spéciale",  cat = "Fusils" },
-    [GetHashKey("weapon_bullpuprifle")]      = { name = "Bullpup Rifle",      cat = "Fusils" },
-    [GetHashKey("weapon_sniperrifle")]       = { name = "Sniper",             cat = "Snipers" },
-    [GetHashKey("weapon_heavysniper")]       = { name = "Sniper Lourd",       cat = "Snipers" },
-    [GetHashKey("weapon_heavysniper_mk2")]   = { name = "Sniper Lourd MK2",   cat = "Snipers" },
-    [GetHashKey("weapon_marksmanrifle")]     = { name = "Fusil Précision",    cat = "Snipers" },
-    [GetHashKey("weapon_pumpshotgun")]       = { name = "Shotgun Pompe",      cat = "Shotguns" },
-    [GetHashKey("weapon_sawnoffshotgun")]    = { name = "Shotgun Scié",       cat = "Shotguns" },
-    [GetHashKey("weapon_assaultshotgun")]    = { name = "Shotgun Assault",    cat = "Shotguns" },
-    [GetHashKey("weapon_bullpupshotgun")]    = { name = "Shotgun Bullpup",    cat = "Shotguns" },
-    [GetHashKey("weapon_heavyshotgun")]      = { name = "Shotgun Lourd",      cat = "Shotguns" },
-    [GetHashKey("weapon_grenadelauncher")]   = { name = "Lance-grenades",     cat = "Lourdes" },
-    [GetHashKey("weapon_rpg")]               = { name = "RPG",                cat = "Lourdes" },
-    [GetHashKey("weapon_minigun")]           = { name = "Minigun",            cat = "Lourdes" },
-    [GetHashKey("weapon_grenade")]           = { name = "Grenade",            cat = "Explosifs" },
-    [GetHashKey("weapon_smokegrenade")]      = { name = "Grenade Fumigène",   cat = "Explosifs" },
-    [GetHashKey("weapon_molotov")]           = { name = "Molotov",            cat = "Explosifs" },
-    [GetHashKey("weapon_knife")]             = { name = "Couteau",            cat = "Mêlée" },
-    [GetHashKey("weapon_bat")]               = { name = "Batte",              cat = "Mêlée" },
-    [GetHashKey("weapon_knuckle")]           = { name = "Coup de Poing",      cat = "Mêlée" },
-}
+local function UnequipCurrent()
+    if not EquippedUUID then return end
+    SaveCurrentAmmo()
+    local ped = PlayerPedId()
+    -- On trouve le hash pour le retirer proprement afin qu'il ne reste pas natif
+    for _, item in ipairs(MyInventory) do
+        if item.uuid == EquippedUUID then
+            RemoveWeaponFromPed(ped, item.hash)
+            break
+        end
+    end
+    SetCurrentPedWeapon(ped, UNARMED, true)
+    EquippedUUID = nil
+end
 
-local WHEEL_CONTROLS = { 157, 158, 159, 160, 161, 162, 163, 164, 165 }
-local CTRL_COUNT     = #WHEEL_CONTROLS
-local UNARMED        = GetHashKey("weapon_unarmed")
+RegisterNetEvent('pvp_inv:doEquip', function(uuid, hash, ammo)
+    if EquippedUUID and EquippedUUID ~= uuid then
+        UnequipCurrent()
+    end
+    EquippedUUID = uuid
+    local ped = PlayerPedId()
+    GiveWeaponToPed(ped, hash, ammo, false, true)
+    SetCurrentPedWeapon(ped, hash, true)
+end)
+
+local function ToggleUUID(uuid)
+    if EquippedUUID == uuid then
+        UnequipCurrent()
+    else
+        TriggerServerEvent('pvp_inv:equipItem', uuid)
+    end
+end
 
 -- ================================================
---  COMMANDE FALLBACK /inv
--- ================================================
-RegisterCommand('inv', function()
-    if not inventoryOpen then OpenInventory() end
-end, false)
-
--- ================================================
---  THREAD : désactive roulette + détecte TAB
+-- BLOCK NATIVE WEAPON WHEEL
 -- ================================================
 CreateThread(function()
     while true do
-        -- Lire TAB avant de le bloquer
         if not inventoryOpen and IsDisabledControlJustPressed(0, 37) then
             OpenInventory()
         end
-
-        -- Bloquer weapon wheel natif
         DisableControlAction(0, 37, true)
         HideHudComponentThisFrame(20)
-        for i = 1, CTRL_COUNT do
+        for i = 1, #WHEEL_CONTROLS do
             DisableControlAction(0, WHEEL_CONTROLS[i], true)
         end
-
         Wait(0)
     end
 end)
@@ -93,32 +111,11 @@ end)
 -- ================================================
 --  OUVRIR INVENTAIRE
 -- ================================================
-function OpenInventory()
-    inventoryOpen = true
-    SetTimecycleModifier('hud_def_blur')
-    TriggerServerEvent('pvp_inv:requestPoints')
-    local ped     = GetPed()
-    local weapons = {}
-    local wCount  = 0
-
-    for hash, data in next, weaponData do
-        if HasPedGotWeapon(ped, hash, false) then
-            wCount = wCount + 1
-            local ammo    = GetAmmoInPedWeapon(ped, hash)
-            local _, clip = GetAmmoInClip(ped, hash)
-            weapons[wCount] = {
-                hash = hash,
-                name = data.name,
-                cat  = data.cat,
-                ammo = ammo,
-                clip = clip,
-            }
-        end
-    end
-
+function RefreshUI()
+    local ped = PlayerPedId()
     local nearbyPlayers = {}
-    local npCount       = 0
-    local myCoords      = GetEntityCoords(ped, false)
+    local npCount = 0
+    local myCoords = GetEntityCoords(ped, false)
     local activePlayers = GetActivePlayers()
 
     for i = 1, #activePlayers do
@@ -136,29 +133,53 @@ function OpenInventory()
         end
     end
 
-    -- Sérialise les shortcuts pour le NUI
     local shortcutsSend = {}
     for i = 1, 5 do
-        local hash = shortcuts[i]
-        if hash then
-            local d = weaponData[hash]
-            shortcutsSend[i] = {
-                hash = hash,
-                name = d and d.name or "Arme",
-                cat  = d and d.cat  or ""
-            }
+        local u = shortcuts[i]
+        if u then
+            for _, item in ipairs(MyInventory) do
+                if item.uuid == u then
+                    shortcutsSend[i] = {
+                        uuid = u,
+                        hash = item.hash,
+                        name = item.name,
+                        cat  = "Arme"
+                    }
+                    break
+                end
+            end
+        end
+    end
+
+    -- Update ammo du current equipé juste pour l'UI
+    if EquippedUUID then
+        for _, item in ipairs(MyInventory) do
+            if item.uuid == EquippedUUID then
+                item.ammo = GetAmmoInPedWeapon(ped, item.hash)
+                break
+            end
         end
     end
 
     SendNUIMessage({
         action        = 'openInventory',
-        weapons       = weapons,
+        weapons       = MyInventory,
         nearbyPlayers = nearbyPlayers,
         shortcuts     = shortcutsSend
     })
+end
 
+function OpenInventory()
+    inventoryOpen = true
+    SetTimecycleModifier('hud_def_blur')
+    TriggerServerEvent('pvp_inv:requestPoints')
+    RefreshUI()
     SetNuiFocus(true, true)
 end
+
+RegisterCommand('inv', function()
+    if not inventoryOpen then OpenInventory() end
+end, false)
 
 -- ================================================
 --  NUI CALLBACKS
@@ -171,74 +192,55 @@ RegisterNUICallback('closeInventory', function(_, cb)
 end)
 
 RegisterNUICallback('equipWeapon', function(data, cb)
-    SetCurrentPedWeapon(GetPed(), data.hash, true)
+    ToggleUUID(data.uuid)
     cb('ok')
 end)
 
 RegisterNUICallback('dropWeapon', function(data, cb)
-    RemoveWeaponFromPed(GetPed(), data.hash)
-    -- Nettoie le slot si bindé (mais ne vide pas si arme retirée ailleurs)
-    for i = 1, 5 do
-        if shortcuts[i] == data.hash then shortcuts[i] = nil end
-    end
-    TriggerServerEvent('pvp_inv:dropWeapon', data.hash)
+    if EquippedUUID == data.uuid then UnequipCurrent() end
+    for i = 1, 5 do if shortcuts[i] == data.uuid then shortcuts[i] = nil end end
+    TriggerServerEvent('pvp_inv:dropItem', data.uuid)
     cb('ok')
 end)
 
 RegisterNUICallback('bindShortcut', function(data, cb)
     local slot = tonumber(data.slot)
-    local hash = tonumber(data.hash)
-    if slot and slot >= 1 and slot <= 5 and hash then
-        shortcuts[slot] = hash
+    if slot and slot >= 1 and slot <= 5 and data.uuid then
+        shortcuts[slot] = data.uuid
     end
     cb('ok')
 end)
 
 RegisterNUICallback('unbindShortcut', function(data, cb)
     local slot = tonumber(data.slot)
-    if slot and slot >= 1 and slot <= 5 then
-        shortcuts[slot] = nil
-    end
+    if slot and slot >= 1 and slot <= 5 then shortcuts[slot] = nil end
     cb('ok')
 end)
 
--- Toggle depuis clic slot (inventaire ouvert, NuiFocus=true)
 RegisterNUICallback('shortcutKey', function(data, cb)
     local slot = tonumber(data.slot)
-    if slot then toggleSlot(slot) end
+    if slot and shortcuts[slot] then ToggleUUID(shortcuts[slot]) end
     cb('ok')
 end)
-
--- Raccourcis 1-5 via RegisterKeyMapping
--- Methode FiveM officielle : fonctionne avec ou sans SetNuiFocus
--- Le joueur peut reconfigurer dans Echap > Paramètres > Touches
-
-local function toggleSlot(i)
-    local hash = shortcuts[i]
-    if not hash then return end
-    local ped = GetPed()
-    if not HasPedGotWeapon(ped, hash, false) then return end
-    if GetSelectedPedWeapon(ped) == hash then
-        SetCurrentPedWeapon(ped, UNARMED, true)
-    else
-        SetCurrentPedWeapon(ped, hash, true)
-    end
-end
 
 for i = 1, 5 do
     local slot = i
-    RegisterKeyMapping('+sc' .. slot, 'Raccourci arme ' .. slot, 'keyboard', tostring(slot))
-    RegisterCommand('+sc' .. slot, function() toggleSlot(slot) end, false)
-    RegisterCommand('-sc' .. slot, function() end, false)
+    RegisterKeyMapping('+scUUID' .. slot, 'Raccourci arme ' .. slot, 'keyboard', tostring(slot))
+    RegisterCommand('+scUUID' .. slot, function() 
+        if shortcuts[slot] then ToggleUUID(shortcuts[slot]) end
+    end, false)
+    RegisterCommand('-scUUID' .. slot, function() end, false)
 end
 
 RegisterNUICallback('giveWeapon', function(data, cb)
-    TriggerServerEvent('pvp_inv:giveWeapon', data.targetId, data.hash, data.ammo)
+    if EquippedUUID == data.uuid then UnequipCurrent() end
+    TriggerServerEvent('pvp_inv:giveItem', data.targetId, data.uuid)
     cb('ok')
 end)
 
 RegisterNUICallback('requestTrade', function(data, cb)
-    TriggerServerEvent('pvp_inv:requestTrade', data.targetId, data.hash, data.ammo)
+    if EquippedUUID == data.uuid then UnequipCurrent() end
+    TriggerServerEvent('pvp_inv:requestTrade', data.targetId, data.uuid)
     cb('ok')
 end)
 
@@ -263,37 +265,16 @@ RegisterNetEvent('pvp_inv:receivePoints', function(pts)
     SendNUIMessage({ action = 'setPoints', points = pts })
 end)
 
-RegisterNetEvent('pvp_inv:receiveWeapon', function(fromName, weaponHash, ammo)
-    GiveWeaponToPed(GetPed(), weaponHash, ammo, false, false)
-    local d = weaponData[weaponHash]
-    notify("✅ " .. fromName .. " vous a donné : " .. (d and d.name or "Arme"), 'success')
+RegisterNetEvent('pvp_inv:notifyTrade', function(msg, ntype)
+    notify(msg, ntype)
 end)
 
-RegisterNetEvent('pvp_inv:tradeRequest', function(tradeId, fromName, fromId, weaponHash, ammo)
-    local d = weaponData[weaponHash]
+RegisterNetEvent('pvp_inv:tradeRequest', function(tradeId, fromName, fromId, weaponName, ammo)
     SendNUIMessage({
-        action     = 'tradeRequest',
-        tradeId    = tradeId,
-        fromName   = fromName,
-        weaponName = d and d.name or "Arme",
-        ammo       = ammo
+        action = 'tradeRequest',
+        tradeId = tradeId,
+        fromName = fromName,
+        fromId = fromId,
+        weaponName = weaponName .. " (" .. ammo .. " balles)"
     })
-end)
-
-RegisterNetEvent('pvp_inv:tradeAccepted', function(_, weaponHash, ammo)
-    GiveWeaponToPed(GetPed(), weaponHash, ammo, false, false)
-    local d = weaponData[weaponHash]
-    notify("✅ Trade accepté ! Reçu : " .. (d and d.name or "Arme"), 'success')
-end)
-
-RegisterNetEvent('pvp_inv:tradeDeclined', function()
-    notify("❌ Trade refusé.", 'error')
-end)
-
--- Quand une arme est retirée (don/trade) : vide aussi le bind
-RegisterNetEvent('pvp_inv:removeWeapon', function(weaponHash)
-    RemoveWeaponFromPed(GetPed(), weaponHash)
-    for i = 1, 5 do
-        if shortcuts[i] == weaponHash then shortcuts[i] = nil end
-    end
 end)

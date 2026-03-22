@@ -14,6 +14,12 @@ Citizen.CreateThread(function()
             print('^2[PVP CORE] Colonne "points" ajoutee a la table users.^7')
         end
     end)
+    MySQL.query('SHOW COLUMNS FROM `users` LIKE "inventory"', {}, function(result)
+        if not result or #result == 0 then
+            MySQL.query('ALTER TABLE `users` ADD COLUMN `inventory` LONGTEXT NOT NULL DEFAULT "[]"')
+            print('^2[PVP CORE] Colonne "inventory" ajoutee a la table users.^7')
+        end
+    end)
 end)
 
 function SendDiscordLog(name, isNew, ids)
@@ -62,7 +68,7 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
         local exist = MySQL.query.await('SELECT identifier FROM users WHERE identifier = ?', {ids.license})
 
         if not exist[1] then
-            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths, points) VALUES (?, ?, 0, 0, 0)', {ids.license, name})
+            MySQL.insert.await('INSERT INTO users (identifier, name, kills, deaths, points, inventory) VALUES (?, ?, 0, 0, 0, "[]")', {ids.license, name})
             print('^2[PVP] Nouveau joueur : ' .. name .. ' | Sa licence est -> ^3' .. ids.license .. '^7')
             SendDiscordLog(name, true, ids)
         else

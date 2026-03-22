@@ -163,8 +163,8 @@ document.addEventListener('keydown', e => {
             const i = parseInt(card.dataset.index);
             const w = weaponsData[i];
             if (w) {
-                shortcuts[slot - 1] = { hash: w.hash, name: w.name, cat: w.cat };
-                post('bindShortcut', { slot, hash: w.hash });
+                shortcuts[slot - 1] = { uuid: w.uuid, hash: w.hash, name: w.name, cat: w.cat };
+                post('bindShortcut', { slot, uuid: w.uuid });
                 renderShortcutGrid();
                 const slotEl = shortcutGrid.querySelector(`[data-slot="${slot}"]`);
                 if (slotEl) { slotEl.classList.add('flash'); setTimeout(() => slotEl.classList.remove('flash'), 500); }
@@ -206,6 +206,10 @@ function renderWeapons() {
             <div class="item-footer">
                 <span class="item-fname">${w.name}</span>
                 <span class="item-qty">x${w.ammo}</span>
+            </div>
+            <div class="item-actions">
+                <button class="btn-sc" data-action="equip">ÉQUIPER</button>
+                <button class="btn-sc drop" data-action="drop">JETER</button>
             </div>`;
         d.addEventListener('mousedown', e => { if (e.button === 0) startDrag(e, w, d); });
         frag.appendChild(d);
@@ -323,8 +327,8 @@ document.addEventListener('mouseup', e => {
     const slot = target && target.closest('.sc-inv-slot');
     if (slot) {
         const slotNum = parseInt(slot.dataset.slot);
-        shortcuts[slotNum - 1] = { hash: dragItem.hash, name: dragItem.name, cat: dragItem.cat };
-        post('bindShortcut', { slot: slotNum, hash: dragItem.hash });
+        shortcuts[slotNum - 1] = { uuid: dragItem.uuid, hash: dragItem.hash, name: dragItem.name, cat: dragItem.cat };
+        post('bindShortcut', { slot: slotNum, uuid: dragItem.uuid });
         cancelDrag();
         renderShortcutGrid();
     } else {
@@ -364,14 +368,14 @@ weaponsGrid.addEventListener('click', e => {
     const i = parseInt(btn.dataset.index);
     const w = weaponsData[i];
     if (btn.dataset.action === 'equip') {
-        post('equipWeapon', { hash: w.hash });
+        post('equipWeapon', { uuid: w.uuid });
         showNotif(`🔫 ${w.name} équipé`, 'info');
         closeInventory();
     } else if (btn.dataset.action === 'drop') {
-        post('dropWeapon', { hash: w.hash });
+        post('dropWeapon', { uuid: w.uuid });
         showNotif(`🗑 ${w.name} jeté`, 'error');
         // Nettoie le shortcut JS si bindé
-        for (let s = 0; s < 5; s++) { if (shortcuts[s]?.hash === w.hash) shortcuts[s] = null; }
+        for (let s = 0; s < 5; s++) { if (shortcuts[s]?.uuid === w.uuid) shortcuts[s] = null; }
         weaponsData.splice(i, 1);
         selectedWeapon = null;
         bagWeight.textContent = weaponsData.length + ' arme(s)';
@@ -424,14 +428,14 @@ function renderPlayers() {
 
 $('giveBtn').addEventListener('click', () => {
     if (!selectedWeapon || !selectedPlayer) return;
-    post('giveWeapon', { targetId: selectedPlayer.id, hash: selectedWeapon.hash, ammo: selectedWeapon.ammo });
+    post('giveWeapon', { targetId: selectedPlayer.id, uuid: selectedWeapon.uuid });
     showNotif(`🎁 ${selectedWeapon.name} donné à ${selectedPlayer.name}`, 'success');
     closeInventory();
 });
 
 $('tradeBtn').addEventListener('click', () => {
     if (!selectedWeapon || !selectedPlayer) return;
-    post('requestTrade', { targetId: selectedPlayer.id, hash: selectedWeapon.hash, ammo: selectedWeapon.ammo });
+    post('requestTrade', { targetId: selectedPlayer.id, uuid: selectedWeapon.uuid });
     showNotif(`🔄 Demande envoyée à ${selectedPlayer.name}…`, 'info');
     actionBox.classList.add('hidden');
 });

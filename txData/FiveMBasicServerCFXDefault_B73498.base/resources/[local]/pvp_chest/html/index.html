@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+:root {
+  --sidebar:    rgba(15,15,15,0.97);
+  --card:       rgba(30,30,30,0.9);
+  --card-hover: rgba(45,45,45,0.95);
+  --border:     rgba(255,255,255,0.08);
+  --red:        #e53935;
+  --red-dim:    rgba(229,57,53,0.15);
+  --text:       #e0e0e0;
+  --text-mid:   #9e9e9e;
+  --text-dim:   #555;
+  --green:      #43a047;
+  --radius:     3px;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: transparent;
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.hidden { display:none !important; }
+
+#app { position:fixed; inset:0; z-index:1000; }
+
+.overlay {
+  width:100%; height:100%;
+  display:flex;
+  background:rgba(0,0,0,0.55);
+  animation:fadeIn 0.12s ease;
+  position:relative;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* Watermark */
+.watermark {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none; z-index:0;
+  display:flex; flex-direction:column;
+  align-items:center; gap:6px; user-select:none;
+}
+.wm-hex  { font-size:80px; color:rgba(229,57,53,0.06); line-height:1; }
+.wm-name { font-family:'Rajdhani',sans-serif; font-size:52px; font-weight:700; letter-spacing:12px; color:rgba(255,255,255,0.04); }
+.wm-sub  { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:600; letter-spacing:8px; color:rgba(229,57,53,0.06); }
+
+/* Sidebar */
+.sidebar {
+  width:200px; background:var(--sidebar);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  flex-shrink:0; position:relative; z-index:1;
+}
+.sidebar-brand {
+  display:flex; align-items:center; gap:10px;
+  padding:18px 16px 14px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(229,57,53,0.12),transparent);
+}
+.brand-hex  { font-size:26px; color:var(--red); filter:drop-shadow(0 0 6px rgba(229,57,53,0.5)); }
+.brand-text { display:flex; flex-direction:column; line-height:1.1; }
+.brand-name { font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; letter-spacing:3px; color:#fff; }
+.brand-sub  { font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600; letter-spacing:4px; color:var(--red); }
+.sidebar-info { padding:14px 16px; border-bottom:1px solid var(--border); }
+.info-label { font-size:9px; letter-spacing:2px; color:var(--text-dim); margin-bottom:6px; }
+.info-val   { font-size:12px; font-weight:600; color:var(--text); }
+.sidebar-hint { padding:12px 16px; margin-top:auto; border-top:1px solid var(--border); }
+.hint-line { font-size:9px; color:var(--text-dim); letter-spacing:0.5px; line-height:1.8; }
+
+/* Bouton fermer */
+.close-x {
+  position:absolute; top:10px; right:12px;
+  background:none; border:1px solid var(--border);
+  color:var(--text-dim); width:26px; height:26px;
+  border-radius:var(--radius); cursor:pointer;
+  font-size:11px; display:flex; align-items:center; justify-content:center;
+  transition:all 0.1s; z-index:10;
+}
+.close-x:hover { border-color:var(--red); color:var(--red); }
+
+/* Content */
+.content {
+  flex:1; display:flex; overflow:hidden;
+  background:rgba(10,10,10,0.6);
+  position:relative; z-index:1;
+}
+
+.panel {
+  flex:1; min-height:0;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.panel:first-child { border-right:1px solid var(--border); }
+
+.panel-header {
+  flex-shrink:0; display:flex; align-items:center; gap:8px;
+  padding:10px 20px 8px;
+  border-bottom:1px solid var(--border);
+}
+.panel-bar   { width:3px; height:14px; background:var(--red); border-radius:1px; flex-shrink:0; }
+.panel-title { font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text); }
+.panel-count { font-size:10px; color:var(--text-dim); margin-left:auto; }
+
+.grid-wrap { flex:1; min-height:0; overflow-y:auto; padding:12px 16px; }
+.grid-wrap::-webkit-scrollbar { width:3px; }
+.grid-wrap::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); }
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:8px;
+}
+
+/* Cards */
+.item-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  cursor:grab;
+  transition:background 0.1s, border-color 0.1s, transform 0.1s;
+  position:relative; overflow:hidden;
+  height:140px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  user-select:none;
+}
+.item-card:hover:not(.empty) {
+  background:var(--card-hover);
+  border-color:rgba(255,255,255,0.15);
+}
+.item-card.empty {
+  cursor:default;
+  background:rgba(20,20,20,0.6);
+  border-color:rgba(255,255,255,0.04);
+  border-style:dashed;
+}
+.item-card.dragging   { opacity:0.3; cursor:grabbing; border-color:var(--red); }
+
+/* Etat selectionne : clic = arme en main */
+.item-card.selected {
+  border-color:var(--red);
+  background:var(--red-dim);
+  transform:scale(1.03);
+  box-shadow:0 0 12px rgba(229,57,53,0.3);
+}
+
+/* Cible valide quand une arme est selectionnee */
+.item-card.drop-target {
+  border-color:var(--green);
+  background:rgba(67,160,71,0.1);
+}
+
+.item-img {
+  width:80px; height:68px;
+  object-fit:contain;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  flex-shrink:0; pointer-events:none;
+}
+.item-fallback {
+  font-size:38px;
+  display:flex; align-items:center; justify-content:center;
+  height:68px; flex-shrink:0; pointer-events:none;
+}
+.item-footer {
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(0,0,0,0.7);
+  padding:4px 8px;
+  display:flex; justify-content:space-between; align-items:center;
+  pointer-events:none;
+}
+.item-fname { font-size:10px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
+.item-qty   { font-size:10px; color:var(--text-mid); font-weight:600; flex-shrink:0; }
+.item-cat   { position:absolute; top:4px; left:6px; font-size:7px; color:var(--text-dim); letter-spacing:0.5px; text-transform:uppercase; pointer-events:none; }
+
+/* Ghost qui suit la souris pendant le drag */
+#drag-ghost {
+  position:fixed; z-index:99999; pointer-events:none;
+  background:rgba(15,15,15,0.95);
+  border:1px solid var(--red);
+  border-radius:4px;
+  padding:6px 10px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  box-shadow:0 4px 20px rgba(229,57,53,0.3);
+  transform:rotate(2deg);
+}
+#drag-ghost.hidden { display:none; }
+.ghost-img  { width:48px; height:40px; object-fit:contain; pointer-events:none; }
+.ghost-name { font-size:9px; color:var(--text-mid); white-space:nowrap; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<div id="app" class="hidden">
+<div class="overlay">
+
+  <div class="watermark">
+    <div class="wm-hex">&#x2B21;</div>
+    <div class="wm-name">ASHFALL</div>
+    <div class="wm-sub">PVP</div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-hex">&#x2B21;</div>
+      <div class="brand-text">
+        <span class="brand-name">ASHFALL</span>
+        <span class="brand-sub">PVP</span>
+      </div>
+    </div>
+    <div class="sidebar-info">
+      <div class="info-label">COFFRE PERSONNEL</div>
+      <div class="info-val" id="sidebarCount">0 arme(s)</div>
+    </div>
+    <div class="sidebar-hint">
+      <div class="hint-line">Maintenir clic sur une arme</div>
+      <div class="hint-line">Relacher sur la cible</div>
+      <div class="hint-line" style="margin-top:6px">Echap pour fermer</div>
+    </div>
+  </div>
+
+  <button class="close-x" id="closeBtn">&#x2715;</button>
+
+  <div class="content">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-bar"></div>
+        <div class="panel-title">MON SAC</div>
+        <div class="panel-count" id="invCount">0 arme(s)</div>
+      </div>
+      <div class="grid-wrap"><div class="grid" id="invGrid"></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-bar"></div>
+        <div class="panel-title">COFFRE</div>
+        <div class="panel-count" id="chestCount">0 arme(s)</div>
+      </div>
+      <div class="grid-wrap"><div class="grid" id="chestGrid"></div></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div id="drag-ghost" class="hidden">
+  <img class="ghost-img" id="ghost-img" src="" alt="">
+  <div class="ghost-name" id="ghost-name"></div>
+</div>
+
+<script>
+'use strict';
+
+// -- SVG armes --
+function mkSVG(paths, vb) {
+  vb = vb || '0 0 64 64';
+  return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='" + vb + "'>" + paths + "</svg>";
+}
+var W = "fill='%23c8cdd6'", D = "fill='%23333'";
+var IMGS = {
+  'Pistolet':          mkSVG("<rect x='8' y='26' width='40' height='14' rx='3' "+W+"/><rect x='38' y='18' width='12' height='12' rx='2' "+W+"/><rect x='8' y='38' width='10' height='10' rx='1' "+D+"/><rect x='48' y='28' width='8' height='4' rx='1' "+D+"/>"),
+  'Pistolet MK2':      mkSVG("<rect x='6' y='25' width='42' height='14' rx='3' "+W+"/><rect x='38' y='16' width='12' height='13' rx='2' "+W+"/><rect x='6' y='37' width='10' height='11' rx='1' "+D+"/><rect x='48' y='27' width='10' height='4' rx='1' "+D+"/><rect x='10' y='39' width='20' height='3' rx='1' fill='%23e53935'/>"),
+  'Pistolet Combat':   mkSVG("<rect x='8' y='26' width='38' height='13' rx='2' "+W+"/><rect x='36' y='18' width='12' height='11' rx='2' "+W+"/><rect x='8' y='37' width='10' height='10' rx='1' "+D+"/><rect x='46' y='27' width='8' height='3' rx='1' "+D+"/>"),
+  'Pistolet AP':       mkSVG("<rect x='6' y='24' width='44' height='14' rx='3' "+W+"/><rect x='40' y='15' width='12' height='13' rx='2' "+W+"/><rect x='6' y='36' width='12' height='12' rx='1' "+D+"/><rect x='50' y='26' width='10' height='4' rx='1' "+D+"/>"),
+  'Pistolet Lourd':    mkSVG("<rect x='6' y='24' width='46' height='16' rx='3' "+W+"/><rect x='40' y='14' width='14' height='14' rx='2' "+W+"/><rect x='6' y='38' width='14' height='12' rx='1' "+D+"/><rect x='52' y='26' width='10' height='5' rx='1' "+D+"/>"),
+  'Pistolet SNS':      mkSVG("<rect x='10' y='28' width='34' height='11' rx='2' "+W+"/><rect x='34' y='21' width='12' height='10' rx='2' "+W+"/><rect x='10' y='37' width='9' height='9' rx='1' "+D+"/><rect x='44' y='29' width='7' height='3' rx='1' "+D+"/>"),
+  'Micro SMG':         mkSVG("<rect x='4' y='26' width='48' height='12' rx='2' "+W+"/><rect x='36' y='18' width='10' height='10' rx='2' "+W+"/><rect x='4' y='36' width='8' height='10' rx='1' "+D+"/><rect x='50' y='28' width='12' height='4' rx='1' "+D+"/>"),
+  'SMG':               mkSVG("<rect x='2' y='25' width='52' height='14' rx='3' "+W+"/><rect x='34' y='16' width='12' height='11' rx='2' "+W+"/><rect x='2' y='37' width='10' height='12' rx='1' "+D+"/><rect x='52' y='27' width='12' height='4' rx='1' "+D+"/>"),
+  'SMG MK2':           mkSVG("<rect x='2' y='24' width='52' height='14' rx='3' "+W+"/><rect x='34' y='15' width='12' height='11' rx='2' "+W+"/><rect x='2' y='36' width='10' height='13' rx='1' "+D+"/><rect x='2' y='38' width='52' height='3' rx='1' fill='%23e53935'/>"),
+  'SMG Assault':       mkSVG("<rect x='2' y='24' width='54' height='14' rx='3' "+W+"/><rect x='38' y='15' width='12' height='11' rx='2' "+W+"/><rect x='2' y='36' width='10' height='13' rx='1' "+D+"/>"),
+  'PDW Combat':        mkSVG("<rect x='2' y='26' width='48' height='12' rx='3' "+W+"/><rect x='32' y='18' width='12' height='10' rx='2' "+W+"/><rect x='2' y='36' width='10' height='11' rx='1' "+D+"/>"),
+  "Fusil d'assaut":    mkSVG("<rect x='0' y='26' width='64' height='13' rx='2' "+W+"/><rect x='38' y='18' width='10' height='10' rx='2' "+W+"/><rect x='10' y='37' width='10' height='13' rx='1' "+D+"/><rect x='54' y='24' width='10' height='4' rx='1' "+D+"/>"),
+  "Fusil d'assaut MK2":mkSVG("<rect x='0' y='25' width='64' height='14' rx='2' "+W+"/><rect x='38' y='17' width='10' height='10' rx='2' "+W+"/><rect x='10' y='37' width='10' height='13' rx='1' "+D+"/><rect x='0' y='39' width='64' height='3' rx='1' fill='%23e53935'/>"),
+  'Carabine':          mkSVG("<rect x='0' y='26' width='64' height='13' rx='2' "+W+"/><rect x='36' y='18' width='10' height='10' rx='2' "+W+"/><rect x='12' y='37' width='10' height='13' rx='1' "+D+"/>"),
+  'Carabine MK2':      mkSVG("<rect x='0' y='25' width='64' height='14' rx='2' "+W+"/><rect x='36' y='17' width='10' height='10' rx='2' "+W+"/><rect x='12' y='37' width='10' height='13' rx='1' "+D+"/><rect x='0' y='39' width='64' height='3' fill='%23e53935'/>"),
+  'Fusil Avanc\u00e9':      mkSVG("<rect x='0' y='26' width='64' height='12' rx='2' "+W+"/><rect x='40' y='18' width='10' height='10' rx='2' "+W+"/><rect x='14' y='36' width='8' height='12' rx='1' "+D+"/>"),
+  'Carabine Sp\u00e9ciale': mkSVG("<rect x='0' y='26' width='62' height='13' rx='2' "+W+"/><rect x='36' y='18' width='10' height='10' rx='2' "+W+"/><rect x='12' y='37' width='10' height='13' rx='1' "+D+"/>"),
+  'Bullpup Rifle':     mkSVG("<rect x='0' y='24' width='64' height='16' rx='3' "+W+"/><rect x='48' y='16' width='14' height='12' rx='2' "+W+"/><rect x='40' y='38' width='14' height='12' rx='1' "+D+"/>"),
+  'Sniper':            mkSVG("<rect x='0' y='28' width='64' height='10' rx='2' "+W+"/><rect x='42' y='20' width='8' height='10' rx='1' "+W+"/><rect x='18' y='36' width='8' height='14' rx='1' "+D+"/><circle cx='46' cy='22' r='5' fill='none' stroke='%23aaa' stroke-width='2'/>"),
+  'Sniper Lourd':      mkSVG("<rect x='0' y='27' width='64' height='12' rx='2' "+W+"/><rect x='44' y='18' width='10' height='11' rx='1' "+W+"/><rect x='16' y='37' width='10' height='14' rx='1' "+D+"/><circle cx='48' cy='21' r='6' fill='none' stroke='%23aaa' stroke-width='2'/>"),
+  'Sniper Lourd MK2':  mkSVG("<rect x='0' y='26' width='64' height='13' rx='2' "+W+"/><rect x='44' y='17' width='10' height='11' rx='1' "+W+"/><rect x='16' y='37' width='10' height='14' rx='1' "+D+"/><rect x='0' y='39' width='64' height='3' fill='%23e53935'/><circle cx='48' cy='20' r='6' fill='none' stroke='%23aaa' stroke-width='2'/>"),
+  'Fusil Pr\u00e9cision':   mkSVG("<rect x='0' y='28' width='62' height='10' rx='2' "+W+"/><rect x='40' y='20' width='8' height='10' rx='1' "+W+"/><rect x='18' y='36' width='8' height='12' rx='1' "+D+"/><circle cx='44' cy='23' r='4' fill='none' stroke='%23aaa' stroke-width='2'/>"),
+  'Shotgun Pompe':     mkSVG("<rect x='0' y='26' width='56' height='14' rx='2' "+W+"/><rect x='36' y='38' width='16' height='10' rx='1' "+D+"/><rect x='56' y='24' width='8' height='5' rx='1' "+D+"/>"),
+  'Shotgun Sci\u00e9':      mkSVG("<rect x='4' y='26' width='44' height='14' rx='2' "+W+"/><rect x='30' y='38' width='14' height='10' rx='1' "+D+"/><rect x='46' y='24' width='8' height='5' rx='1' "+D+"/>"),
+  'Shotgun Assault':   mkSVG("<rect x='0' y='24' width='56' height='16' rx='3' "+W+"/><rect x='36' y='15' width='10' height='11' rx='2' "+W+"/><rect x='10' y='38' width='10' height='14' rx='1' "+D+"/>"),
+  'Shotgun Bullpup':   mkSVG("<rect x='0' y='23' width='64' height='18' rx='3' "+W+"/><rect x='50' y='15' width='12' height='10' rx='2' "+W+"/><rect x='44' y='39' width='16' height='14' rx='1' "+D+"/>"),
+  'Shotgun Lourd':     mkSVG("<rect x='0' y='23' width='58' height='18' rx='3' "+W+"/><rect x='38' y='14' width='12' height='11' rx='2' "+W+"/><rect x='10' y='39' width='12' height='14' rx='1' "+D+"/>"),
+  'Lance-grenades':    mkSVG("<rect x='2' y='24' width='52' height='18' rx='4' "+W+"/><rect x='18' y='40' width='12' height='14' rx='1' "+D+"/><circle cx='54' cy='31' r='6' fill='%23777'/>"),
+  'RPG':               mkSVG("<rect x='0' y='28' width='50' height='10' rx='2' "+W+"/><rect x='50' y='24' width='14' height='18' rx='3' fill='%23888'/><rect x='18' y='36' width='10' height='14' rx='1' "+D+"/><polygon points='64,32 58,26 58,38' fill='%23e53935'/>"),
+  'Minigun':           mkSVG("<circle cx='32' cy='32' r='14' "+W+"/><circle cx='32' cy='32' r='8' "+D+"/><rect x='46' y='30' width='18' height='4' rx='2' "+D+"/>"),
+  'Grenade':           mkSVG("<circle cx='30' cy='36' r='16' fill='%23556b2f'/><rect x='27' y='16' width='6' height='10' rx='2' fill='%23888'/><rect x='22' y='12' width='16' height='6' rx='2' fill='%23777'/>"),
+  'Grenade Fumig\u00e8ne':  mkSVG("<circle cx='32' cy='38' r='14' fill='%23607d8b'/><rect x='29' y='20' width='6' height='10' rx='2' fill='%23888'/><circle cx='32' cy='16' r='4' fill='%23aaa'/>"),
+  'Molotov':           mkSVG("<rect x='26' y='30' width='12' height='24' rx='4' fill='%23c8a040'/><rect x='28' y='14' width='8' height='18' rx='2' fill='%23aaa'/><polygon points='32,4 26,16 38,16' fill='%23e53935'/>"),
+  'Couteau':           mkSVG("<polygon points='10,50 20,54 54,20 50,10' "+W+"/><polygon points='10,50 14,56 20,54' "+D+"/>"),
+  'Batte':             mkSVG("<rect x='28' y='4' width='8' height='44' rx='4' fill='%23c8a040'/><rect x='26' y='46' width='12' height='14' rx='3' fill='%23888'/>"),
+  'Coup de Poing':     mkSVG("<rect x='8' y='24' width='48' height='28' rx='8' fill='%23d4a040'/><rect x='12' y='18' width='10' height='14' rx='4' fill='%23d4a040'/><rect x='26' y='18' width='10' height='14' rx='4' fill='%23d4a040'/><rect x='40' y='18' width='10' height='14' rx='4' fill='%23d4a040'/>"),
+};
+
+var SLOTS = 80;
+var state   = { inventory:[], chest:{} };
+
+var app          = document.getElementById('app');
+var invGrid      = document.getElementById('invGrid');
+var chestGrid    = document.getElementById('chestGrid');
+var ghost        = document.getElementById('drag-ghost');
+var ghostImg     = document.getElementById('ghost-img');
+var ghostName    = document.getElementById('ghost-name');
+var invCount     = document.getElementById('invCount');
+var chestCount   = document.getElementById('chestCount');
+var sidebarCount = document.getElementById('sidebarCount');
+
+var dragData   = null;   // donnees de l item en cours
+var dragOrigin = null;   // card source
+var rects      = [];     // cache getBoundingClientRect
+
+var post = function(ep, body) {
+  fetch('https://pvp_chest/' + ep, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body || {})
+  });
+};
+
+// -- Messages Lua --
+window.addEventListener('message', function(e) {
+  var d = e.data;
+  if (d.type === 'update') {
+    if (d.inventory != null) state.inventory = d.inventory || [];
+    if (d.chest     != null) state.chest     = d.chest     || {};
+    app.classList.remove('hidden');
+    render();
+  }
+  if (d.type === 'close') {
+    app.classList.add('hidden');
+    endDrag();
+  }
+});
+
+// -- Rendu --
+function render() {
+  var inv     = state.inventory || [];
+  var entries = Object.values(state.chest || {});
+  renderGrid(invGrid,   inv,     'deposit');
+  renderGrid(chestGrid, entries, 'withdraw');
+  invCount.textContent     = inv.length + ' arme(s)';
+  chestCount.textContent   = entries.length + ' arme(s)';
+  sidebarCount.textContent = entries.length + ' arme(s)';
+}
+
+function imgHTML(name) {
+  var src = IMGS[name];
+  if (src) {
+    var img = document.createElement('img');
+    img.className = 'item-img'; img.src = src; img.alt = name;
+    return img;
+  }
+  var fb = document.createElement('div');
+  fb.className = 'item-fallback'; fb.innerHTML = '&#128299;';
+  return fb;
+}
+
+function renderGrid(grid, items, action) {
+  var frag = document.createDocumentFragment();
+  for (var i = 0; i < items.length; i++) {
+    var w    = items[i];
+    var card = document.createElement('div');
+    card.className = 'item-card';
+    card.dataset.action = action;
+    card.dataset.hash   = w.hash;
+    card.dataset.name   = w.name || 'Arme';
+    card.dataset.cat    = w.cat  || '';
+    card.dataset.ammo   = w.ammo != null ? w.ammo : 0;
+    var cat = document.createElement('div'); cat.className = 'item-cat'; cat.textContent = w.cat || '';
+    var footer = document.createElement('div'); footer.className = 'item-footer';
+    var fname  = document.createElement('span'); fname.className = 'item-fname'; fname.textContent = w.name || '';
+    var qty    = document.createElement('span'); qty.className   = 'item-qty';   qty.textContent   = 'x' + (w.ammo != null ? w.ammo : 0);
+    footer.appendChild(fname); footer.appendChild(qty);
+    card.appendChild(cat); card.appendChild(imgHTML(w.name)); card.appendChild(footer);
+    frag.appendChild(card);
+  }
+  for (var j = items.length; j < SLOTS; j++) {
+    var empty = document.createElement('div'); empty.className = 'item-card empty'; frag.appendChild(empty);
+  }
+  grid.innerHTML = '';
+  grid.appendChild(frag);
+}
+
+// -- Drag & Drop : maintenir + relacher --
+
+invGrid.addEventListener('mousedown',   onMouseDown);
+chestGrid.addEventListener('mousedown', onMouseDown);
+
+function onMouseDown(e) {
+  if (e.button !== 0) return;
+  var card = e.target.closest('.item-card[data-action]');
+  if (!card) return;
+
+  dragData   = { action:card.dataset.action, hash:card.dataset.hash, name:card.dataset.name, cat:card.dataset.cat };
+  dragOrigin = card;
+  card.classList.add('dragging');
+
+  // Ghost
+  var src = IMGS[card.dataset.name];
+  if (src) { ghostImg.src = src; ghostImg.style.display = ''; }
+  else      { ghostImg.style.display = 'none'; }
+  ghostName.textContent = card.dataset.name;
+  moveGhost(e);
+  ghost.classList.remove('hidden');
+
+  // Cache rects une seule fois au debut du drag
+  rects = [];
+  var all = document.querySelectorAll('.item-card');
+  for (var i = 0; i < all.length; i++) {
+    if (all[i] !== card) rects.push({ c:all[i], r:all[i].getBoundingClientRect() });
+  }
+
+  e.preventDefault();
+}
+
+document.addEventListener('mousemove', function(e) {
+  if (!dragData) return;
+  moveGhost(e);
+  for (var i = 0; i < rects.length; i++) {
+    var r = rects[i].r;
+    rects[i].c.classList.toggle('drop-target',
+      e.clientX >= r.left && e.clientX <= r.right &&
+      e.clientY >= r.top  && e.clientY <= r.bottom
+    );
+  }
+});
+
+document.addEventListener('mouseup', function(e) {
+  if (!dragData) return;
+  for (var i = 0; i < rects.length; i++) {
+    var r = rects[i].r;
+    if (e.clientX >= r.left && e.clientX <= r.right &&
+        e.clientY >= r.top  && e.clientY <= r.bottom) {
+      post(dragData.action, { hash:dragData.hash, name:dragData.name, cat:dragData.cat });
+      break;
+    }
+  }
+  endDrag();
+});
+
+function moveGhost(e) {
+  ghost.style.left = (e.clientX + 14) + 'px';
+  ghost.style.top  = (e.clientY + 14) + 'px';
+}
+
+function endDrag() {
+  if (dragOrigin) { dragOrigin.classList.remove('dragging'); dragOrigin = null; }
+  var dt = document.querySelectorAll('.drop-target');
+  for (var i = 0; i < dt.length; i++) dt[i].classList.remove('drop-target');
+  ghost.classList.add('hidden');
+  dragData = null;
+  rects = [];
+}
+
+// Echap ferme
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (dragData) { endDrag(); return; }
+    closeUI();
+  }
+});
+
+document.getElementById('closeBtn').addEventListener('click', closeUI);
+
+function closeUI() {
+  app.classList.add('hidden');
+  endDrag();
+  post('close');
+}
+</script>
+</body>
+</html>

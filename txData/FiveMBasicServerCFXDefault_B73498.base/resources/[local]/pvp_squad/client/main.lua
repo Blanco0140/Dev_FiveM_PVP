@@ -49,6 +49,7 @@ RegisterKeyMapping('squad', 'Ouvrir le menu Squad', 'keyboard', 'J')
 
 function OpenSquad()
     squadOpen = true
+    SetTimecycleModifier('hud_def_blur')
     TriggerServerEvent('pvp_squad:getList')
     SendNUIMessage({ action = 'open', mySquad = mySquad, myServerId = myServerId })
     SetNuiFocus(true, true)
@@ -56,6 +57,7 @@ end
 
 function CloseSquad()
     squadOpen = false
+    ClearTimecycleModifier()
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
 end

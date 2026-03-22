@@ -47,9 +47,19 @@ function SendDiscordLog(name, isNew, ids)
     PerformHttpRequest(webhookUrl, function(err, text, headers) end, 'POST', json.encode({username = "Système de Connexion", avatar_url = "https://i.imgur.com/xVzJ8A9.png", embeds = embed}), { ['Content-Type'] = 'application/json' })
 end
 
+local WhitelistedDiscords = {
+    ["discord:763789542816874548"] = true,
+    ["discord:898276549097291826"] = true,
+    ["discord:333584346399244290"] = true,
+}
+
 -- Quand un joueur se connecte, on le crée en BDD s'il n'existe pas
 AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     local player = source
+    deferrals.defer()
+    Wait(0)
+    deferrals.update("Vérification de la whitelist Discord en cours...")
+
     local ids = {
         license = nil,
         discord = nil,
@@ -62,6 +72,14 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
         elseif string.match(v, 'discord:') then ids.discord = v
         elseif string.match(v, 'steam:') then ids.steam = v
         elseif string.match(v, 'ip:') then ids.ip = string.gsub(v, 'ip:', '') end
+    end
+
+    if not ids.discord then
+        return deferrals.done("\n[ASHFALL PVP]\nVous devez avoir Discord ouvert et lié à FiveM pour vous connecter.")
+    end
+
+    if not WhitelistedDiscords[ids.discord] then
+        return deferrals.done("\n[ASHFALL PVP]\nVous n'êtes pas sur la liste blanche.\nVotre Discord ID: " .. string.gsub(ids.discord, "discord:", ""))
     end
 
     if ids.license then
@@ -77,8 +95,10 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
             print('^4[PVP] Joueur connu : ' .. name .. ' | Sa licence est -> ^3' .. ids.license .. '^7')
             SendDiscordLog(name, false, ids)
         end
+        deferrals.done()
     else
         print('^1[PVP] Erreur : Impossible de trouver la licence du joueur ' .. name .. '^7')
+        deferrals.done("\n[ASHFALL PVP]\nErreur : Impossible de trouver votre licence Rockstar.")
     end
 end)
 

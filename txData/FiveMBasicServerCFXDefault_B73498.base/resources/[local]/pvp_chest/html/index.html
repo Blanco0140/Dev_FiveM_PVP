@@ -313,11 +313,11 @@ function render() {
   sidebarCount.textContent = entries.length + ' arme(s)';
 }
 
-function imgHTML(name) {
+function imgHTML(hash, altName) {
   var img = document.createElement('img');
   img.className = 'item-img';
-  img.src = 'nui://images/Weapons/' + name.replace(/ /g, '%20') + '.png';
-  img.alt = name;
+  img.src = 'nui://images/Weapons/' + hash + '.png';
+  img.alt = altName || hash;
   img.onerror = function() {
     this.style.display = 'none';
   };

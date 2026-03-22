@@ -14,4 +14,9 @@ server_scripts {
 }
 
 ui_page 'html/index.html'
-files   { 'html/index.html' }
+files {
+    'html/index.html',
+    'html/img/Weapons/*.png',
+    'html/img/Weapons/*.jpg',
+    'html/img/Weapons/*.jpeg'
+}

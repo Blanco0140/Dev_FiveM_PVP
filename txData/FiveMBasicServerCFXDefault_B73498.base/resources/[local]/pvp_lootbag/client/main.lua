@@ -159,7 +159,7 @@ end)
 -- ============================================
 
 RegisterNetEvent('lootbag:lootResult')
-AddEventHandler('lootbag:lootResult', function(success, bagId, weapons, errorMsg)
+AddEventHandler('lootbag:lootResult', function(success, bagId, weaponCount, errorMsg)
     isLooting = false
 
     if not success then
@@ -167,19 +167,8 @@ AddEventHandler('lootbag:lootResult', function(success, bagId, weapons, errorMsg
         return
     end
 
-    if not weapons then return end
-
-    local ped = PlayerPedId()
-    local count = 0
-    for _, w in ipairs(weapons) do
-        if w and w.weapon then
-            GiveWeaponToPed(ped, GetHashKey(w.weapon), w.ammo or 0, false, false)
-            count = count + 1
-        end
-    end
-
-    if count > 0 then
-        notify('~g~' .. count .. ' arme(s) recuperee(s) !')
+    if weaponCount and weaponCount > 0 then
+        notify('~g~' .. weaponCount .. ' arme(s) recuperee(s) !')
     end
 end)
 
@@ -189,59 +178,11 @@ end)
 
 local function collectAndSendWeapons()
     local ped = PlayerPedId()
-    local weapons = {}
-
-    local weaponList = {
-        'WEAPON_PISTOL',            'WEAPON_PISTOL_MK2',        'WEAPON_COMBATPISTOL',
-        'WEAPON_APPISTOL',          'WEAPON_STUNGUN',            'WEAPON_PISTOL50',
-        'WEAPON_SNSPISTOL',         'WEAPON_HEAVYPISTOL',        'WEAPON_VINTAGEPISTOL',
-        'WEAPON_FLAREGUN',          'WEAPON_MARKSMANPISTOL',     'WEAPON_REVOLVER',
-        'WEAPON_REVOLVER_MK2',      'WEAPON_DOUBLEACTION',       'WEAPON_CERAMICPISTOL',
-        'WEAPON_NAVYREVOLVER',      'WEAPON_GADGETPISTOL',       'WEAPON_MICROSMG',
-        'WEAPON_SMG',               'WEAPON_SMG_MK2',            'WEAPON_ASSAULTSMG',
-        'WEAPON_COMBATPDW',         'WEAPON_MACHINEPISTOL',      'WEAPON_MINISMG',
-        'WEAPON_RAYCARBINE',        'WEAPON_PUMPSHOTGUN',        'WEAPON_PUMPSHOTGUN_MK2',
-        'WEAPON_SAWNOFFSHOTGUN',    'WEAPON_ASSAULTSHOTGUN',     'WEAPON_BULLPUPSHOTGUN',
-        'WEAPON_MUSKET',            'WEAPON_HEAVYSHOTGUN',       'WEAPON_DBSHOTGUN',
-        'WEAPON_AUTOSHOTGUN',       'WEAPON_COMBATSHOTGUN',      'WEAPON_ASSAULTRIFLE',
-        'WEAPON_ASSAULTRIFLE_MK2',  'WEAPON_CARBINERIFLE',       'WEAPON_CARBINERIFLE_MK2',
-        'WEAPON_ADVANCEDRIFLE',     'WEAPON_SPECIALCARBINE',     'WEAPON_SPECIALCARBINE_MK2',
-        'WEAPON_BULLPUPRIFLE',      'WEAPON_BULLPUPRIFLE_MK2',   'WEAPON_COMPACTRIFLE',
-        'WEAPON_MILITARYRIFLE',     'WEAPON_HEAVYRIFLE',         'WEAPON_TACTICALRIFLE',
-        'WEAPON_MG',                'WEAPON_COMBATMG',           'WEAPON_COMBATMG_MK2',
-        'WEAPON_GUSENBERG',         'WEAPON_SNIPERRIFLE',        'WEAPON_HEAVYSNIPER',
-        'WEAPON_HEAVYSNIPER_MK2',   'WEAPON_MARKSMANRIFLE',      'WEAPON_MARKSMANRIFLE_MK2',
-        'WEAPON_RPGA',              'WEAPON_GRENADELAUNCHER',    'WEAPON_GRENADELAUNCHER_SMOKE',
-        'WEAPON_MINIGUN',           'WEAPON_FIREWORK',           'WEAPON_RAILGUN',
-        'WEAPON_HOMINGLAUNCHER',    'WEAPON_COMPACTLAUNCHER',    'WEAPON_RAYMINIGUN',
-    }
-
-    for _, weaponName in ipairs(weaponList) do
-        local hash = GetHashKey(weaponName)
-        if HasPedGotWeapon(ped, hash, false) then
-            local excluded = false
-            for _, ex in ipairs(Config.ExcludedWeapons) do
-                if ex == weaponName then
-                    excluded = true
-                    break
-                end
-            end
-
-            if not excluded then
-                local ammo = Config.IncludeAmmo and GetAmmoInPedWeapon(ped, hash) or 0
-                table.insert(weapons, { weapon = weaponName, ammo = ammo })
-                RemoveWeaponFromPed(ped, hash)
-            end
-        end
-    end
-
-    if #weapons > 0 then
-        local coords = GetEntityCoords(ped)
-        TriggerServerEvent('lootbag:playerDied', weapons, {
-            x = coords.x, y = coords.y, z = coords.z
-        })
-        print('[LootBag] ' .. #weapons .. ' arme(s) envoyee(s) au serveur.')
-    end
+    local coords = GetEntityCoords(ped)
+    TriggerServerEvent('lootbag:playerDied', {
+        x = coords.x, y = coords.y, z = coords.z
+    })
+    print('[LootBag] Signale la mort au serveur (inventaire virtuel).')
 end
 
 -- ============================================

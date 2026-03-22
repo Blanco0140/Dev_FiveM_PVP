@@ -19,27 +19,30 @@ end
 -- ============================================
 
 RegisterNetEvent('lootbag:playerDied')
-AddEventHandler('lootbag:playerDied', function(weapons, coords)
-    local playerId = source -- capture immédiate avant tout yield
+AddEventHandler('lootbag:playerDied', function(coords)
+    local playerId = source
 
-    if not weapons or #weapons == 0 then
-        print('[LootBag] ' .. playerId .. ' est mort sans armes, pas de sac créé.')
+    local inv = exports.pvp_inv:GetInventory(playerId)
+    if not inv or #inv == 0 then
+        print('[LootBag] ' .. playerId .. ' est mort sans armes, pas de sac.')
         return
     end
 
     local bagId = generateBagId()
 
     activeBags[bagId] = {
-        weapons  = weapons,
+        weapons  = inv,
         coords   = coords,
         ownerId  = playerId,
         alive    = true
     }
 
-    -- Notifier tous les clients de la création du sac
-    TriggerClientEvent('lootbag:spawnBag', -1, bagId, coords, weapons)
+    -- Le serveur vide l'inventaire du joueur mort !
+    exports.pvp_inv:ClearInventory(playerId)
 
-    print('[LootBag] Sac #' .. bagId .. ' créé aux coords ' .. coords.x .. ', ' .. coords.y .. ', ' .. coords.z)
+    TriggerClientEvent('lootbag:spawnBag', -1, bagId, coords, inv)
+
+    print('[LootBag] Sac #' .. bagId .. ' cree pour ' .. playerId)
 
     -- Timer : supprimer le sac après Config.BagLifetime secondes
     SetTimeout(Config.BagLifetime * 1000, function()
@@ -76,13 +79,19 @@ AddEventHandler('lootbag:lootBag', function(bagId)
     activeBags[bagId].alive = false
     activeBags[bagId] = nil
 
-    -- Donner les armes au joueur qui loote
-    TriggerClientEvent('lootbag:lootResult', playerId, true, bagId, weapons, nil)
+    -- Donner les armes au joueur qui loote (UUID Virtuels via pvp_inv)
+    local count = 0
+    for _, w in ipairs(weapons) do
+        exports.pvp_inv:AddItem(playerId, w.hash, w.name, w.ammo)
+        count = count + 1
+    end
+
+    TriggerClientEvent('lootbag:lootResult', playerId, true, bagId, count, nil)
 
     -- Supprimer le sac visuellement pour tous
     TriggerClientEvent('lootbag:removeBag', -1, bagId)
 
-    print('[LootBag] Sac #' .. bagId .. ' looté par le joueur ' .. playerId)
+    print('[LootBag] Sac #' .. bagId .. ' loote par ' .. playerId)
 end)
 
 -- ============================================

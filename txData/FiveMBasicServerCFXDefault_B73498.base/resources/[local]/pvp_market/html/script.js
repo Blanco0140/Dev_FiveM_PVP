@@ -79,7 +79,7 @@ function renderSell() {
                 <div class="w-icon">🔫</div>
                 <div class="w-name">${w.name}</div>
                 <div class="w-price sell">+${w.value} ★</div>
-                <button class="btn btn-sell" onclick="sellWeapon('${w.hash}')">VENDRE</button>
+                <button class="btn btn-sell" onclick="sellWeapon('${w.uuid}')">VENDRE</button>
             </div>
         `;
     });
@@ -90,8 +90,8 @@ window.buyWeapon = function(hash) {
     post('buyWeapon', { hash });
 };
 
-window.sellWeapon = function(hash) {
-    post('sellWeapon', { hash });
+window.sellWeapon = function(uuid) {
+    post('sellWeapon', { uuid });
 };
 
 // Tabs

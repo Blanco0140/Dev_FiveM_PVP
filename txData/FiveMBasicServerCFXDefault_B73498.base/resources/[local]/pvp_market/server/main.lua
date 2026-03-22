@@ -73,7 +73,6 @@ RegisterNetEvent('pvp_market:buyWeapon', function(weaponHash)
     local src = source
     local wHash = tonumber(weaponHash)
 
-    -- Chercher le prix
     local price = nil
     local wName = "Arme"
     for _, w in ipairs(Config.WeaponsBuy) do
@@ -89,36 +88,64 @@ RegisterNetEvent('pvp_market:buyWeapon', function(weaponHash)
     local currentPoints = exports.pvp_core:GetPlayerPoints(src)
     if currentPoints >= price then
         exports.pvp_core:RemovePlayerPoints(src, price)
-        -- On utilise l'event de pvp_inv pour que l'arme soit notifiée et reçue proprement
-        TriggerClientEvent('pvp_inv:receiveWeapon', src, "Le Marché", wHash, 250)
         
-        TriggerClientEvent('pvp_market:notify', src, 'success', 'Vous avez acheté : ' .. wName .. ' pour '..price..' points.')
-        TriggerClientEvent('pvp_market:updatePoints', src, currentPoints - price)
+        -- Ajout à l'inventaire virtuel
+        exports.pvp_inv:AddItem(src, wHash, wName, 250)
+        
+        TriggerClientEvent('pvp_market:notify', src, 'success', 'Vous avez achete : ' .. wName .. ' pour '..price..' points.')
+        
+        -- Renvoyer nouveau statut
+        local newPts = exports.pvp_core:GetPlayerPoints(src)
+        local inv = exports.pvp_inv:GetInventory(src) or {}
+        local myWeapons = {}
+        for _, item in ipairs(inv) do
+            local val = Config.WeaponsSellValues[item.hash] or Config.DefaultSellValue
+            table.insert(myWeapons, { uuid = item.uuid, hash = item.hash, name = item.name, value = val })
+        end
+        TriggerClientEvent('pvp_market:updateData', src, newPts, myWeapons)
     else
         TriggerClientEvent('pvp_market:notify', src, 'error', "Vous n'avez pas assez de points.")
     end
 end)
 
 -- VENTE
-RegisterNetEvent('pvp_market:sellWeapon', function(weaponHash)
+RegisterNetEvent('pvp_market:sellWeapon', function(uuid)
     local src = source
-    local wHash = tonumber(weaponHash)
+    local inv = exports.pvp_inv:GetInventory(src) or {}
+    local foundHash = nil
+    for _, it in ipairs(inv) do
+        if it.uuid == uuid then foundHash = it.hash; break; end
+    end
+    
+    if not foundHash then return end
+    
+    local value = Config.WeaponsSellValues[foundHash] or Config.DefaultSellValue
+    
+    if exports.pvp_inv:RemoveItem(src, uuid) then
+        exports.pvp_core:AddPlayerPoints(src, value)
+        TriggerClientEvent('pvp_market:notify', src, 'success', 'Vous avez vendu une arme pour '..value..' points.')
+        
+        local newPts = exports.pvp_core:GetPlayerPoints(src)
+        local newInv = exports.pvp_inv:GetInventory(src) or {}
+        local myWeapons = {}
+        for _, item in ipairs(newInv) do
+            local val = Config.WeaponsSellValues[item.hash] or Config.DefaultSellValue
+            table.insert(myWeapons, { uuid = item.uuid, hash = item.hash, name = item.name, value = val })
+        end
+        TriggerClientEvent('pvp_market:updateData', src, newPts, myWeapons)
+    end
+end)
 
-    -- Vérification Serveur : le joueur a-t-il vraiment l'arme ?
-    -- (Sur OneSync, GetWeaponDamageType permet de le deviner rudimentairement ou juste RemoveWeapon)
-    -- On fait confiance au client dans un premier temps pour retirer puis on ajoute
+-- NOUVEL EVENT: Charger points + inv pour UI
+RegisterNetEvent('pvp_market:requestData', function()
+    local src = source
+    local pts = exports.pvp_core:GetPlayerPoints(src)
+    local inv = exports.pvp_inv:GetInventory(src) or {}
     
-    local ped = GetPlayerPed(src)
-    
-    local value = Config.WeaponsSellValues[wHash] or Config.DefaultSellValue
-    
-    RemoveWeaponFromPed(ped, wHash)
-    -- Pour forcer l'inventaire pvp_inv à se vider on lui envoie son propre event
-    TriggerClientEvent('pvp_inv:removeWeapon', src, wHash)
-    
-    exports.pvp_core:AddPlayerPoints(src, value)
-    
-    local currentPoints = exports.pvp_core:GetPlayerPoints(src)
-    TriggerClientEvent('pvp_market:notify', src, 'success', 'Vous avez vendu une arme pour '..value..' points.')
-    TriggerClientEvent('pvp_market:updatePoints', src, currentPoints)
+    local myWeapons = {}
+    for _, item in ipairs(inv) do
+        local val = Config.WeaponsSellValues[item.hash] or Config.DefaultSellValue
+        table.insert(myWeapons, { uuid = item.uuid, hash = item.hash, name = item.name, value = val })
+    end
+    TriggerClientEvent('pvp_market:openMarketData', src, pts, myWeapons)
 end)

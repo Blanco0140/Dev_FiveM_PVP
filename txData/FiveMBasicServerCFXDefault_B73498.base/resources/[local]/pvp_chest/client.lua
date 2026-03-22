@@ -12,22 +12,8 @@ local function CloseChest()
     SendNUIMessage({ type = 'close' })
 end
 
--- ─── Lecture des armes sur le ped ────────────────────────────
-local function GetPedWeapons()
-    local ped     = PlayerPedId()
-    local weapons = {}
-    for hash, data in pairs(Config.Weapons) do
-        if HasPedGotWeapon(ped, hash, false) then
-            weapons[#weapons + 1] = {
-                hash = tostring(hash),
-                name = data.name,
-                cat  = data.cat,
-                ammo = GetAmmoInPedWeapon(ped, hash),
-            }
-        end
-    end
-    return weapons
-end
+-- ─── L'inventaire est géré serveur ────────────────────────────
+-- ─── plus besoin de GetPedWeapons ────────────────────────────
 
 -- ─── Spawn des props ─────────────────────────────────────────
 Citizen.CreateThread(function()
@@ -88,7 +74,7 @@ Citizen.CreateThread(function()
         if isNear and not isOpen then
             Citizen.Wait(0)
             if IsControlJustPressed(0, 38) or IsControlJustPressed(0, 51) then
-                TriggerServerEvent('pvpChest:open', GetPedWeapons())
+                TriggerServerEvent('pvpChest:open')
             end
         elseif isOpen then
             Citizen.Wait(0)
@@ -108,16 +94,12 @@ RegisterNUICallback('close', function(_, cb)
 end)
 
 RegisterNUICallback('deposit', function(data, cb)
-    local ped  = PlayerPedId()          -- une seule fois
-    local hash = tonumber(data.hash)
-    local ammo = GetAmmoInPedWeapon(ped, hash)
-    RemoveWeaponFromPed(ped, hash)
-    TriggerServerEvent('pvpChest:deposit', tostring(hash), ammo, data.name, data.cat)
+    TriggerServerEvent('pvpChest:deposit', data.uuid)
     cb('ok')
 end)
 
 RegisterNUICallback('withdraw', function(data, cb)
-    TriggerServerEvent('pvpChest:withdraw', data.hash)
+    TriggerServerEvent('pvpChest:withdraw', data.uuid)
     cb('ok')
 end)
 
@@ -126,9 +108,4 @@ RegisterNetEvent('pvpChest:update', function(inventory, chest)
     isOpen = true
     SetNuiFocus(true, true)
     SendNUIMessage({ type = 'update', inventory = inventory, chest = chest })
-end)
-
-RegisterNetEvent('pvpChest:giveWeapon', function(hashStr, ammo)
-    GiveWeaponToPed(PlayerPedId(), tonumber(hashStr), ammo, false, false)
-    TriggerServerEvent('pvpChest:open', GetPedWeapons())
 end)

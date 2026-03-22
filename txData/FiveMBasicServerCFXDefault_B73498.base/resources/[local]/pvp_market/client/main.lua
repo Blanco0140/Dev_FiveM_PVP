@@ -55,40 +55,26 @@ function OpenMarket()
     marketOpen = true
     SetTimecycleModifier('hud_def_blur')
     SetNuiFocus(true, true)
+    TriggerServerEvent('pvp_market:requestData')
+end
 
-    -- Demande des points (on attend 100ms via Callbacks c'est compliqué sans framework, donc on feinte, on utilise la NUI pour tout demander
-    -- Mais on a besoin de savoir les armes que le joueur possède pour l'onglet 'Vendre'
-    local pPed = PlayerPedId()
-    local myWeapons = {}
-    for hash, value in pairs(Config.WeaponsSellValues) do
-        if HasPedGotWeapon(pPed, hash, false) then
-            -- On retrouve le nom dans WeaponsBuy ou générique
-            local wName = "Arme Inconnue"
-            for _, wb in ipairs(Config.WeaponsBuy) do
-                if GetHashKey(wb.hash) == hash then
-                    wName = wb.name
-                    break
-                end
-            end
-            table.insert(myWeapons, {
-                hash = hash,
-                name = wName,
-                value = value
-            })
-        end
-    end
-
-    -- Pour simplifier, on demande les points au serveur via un callBack ou Event synchronisé ? 
-    -- On va envoyer ce qu'on a, et le serveur mettra à jour nos points dès qu'on checkera.
-    -- On utilise un Request Points
-    TriggerServerEvent('pvp_market:requestPoints')
-
+RegisterNetEvent('pvp_market:openMarketData')
+AddEventHandler('pvp_market:openMarketData', function(pts, invWeapons)
+    if not marketOpen then return end
     SendNUIMessage({
         action = 'openMarket',
         catalog = Config.WeaponsBuy,
-        inventory = myWeapons
+        inventory = invWeapons
     })
-end
+    SendNUIMessage({ action = 'setPoints', points = pts })
+end)
+
+RegisterNetEvent('pvp_market:updateData')
+AddEventHandler('pvp_market:updateData', function(pts, invWeapons)
+    if not marketOpen then return end
+    SendNUIMessage({ action = 'updateInventory', inventory = invWeapons })
+    SendNUIMessage({ action = 'setPoints', points = pts })
+end)
 
 RegisterNetEvent('pvp_market:updatePoints')
 AddEventHandler('pvp_market:updatePoints', function(pts)
@@ -98,23 +84,6 @@ end)
 RegisterNetEvent('pvp_market:notify')
 AddEventHandler('pvp_market:notify', function(type, msg)
     SendNUIMessage({ action = 'notify', type = type, text = msg })
-    -- Si c'est un refresh (ex: on vient de vendre/acheter on refresh l'inventory localement)
-    if marketOpen then
-        local pPed = PlayerPedId()
-        local myWeapons = {}
-        for hash, value in pairs(Config.WeaponsSellValues) do
-            if HasPedGotWeapon(pPed, hash, false) then
-                local wName = "Arme Inconnue"
-                for _, wb in ipairs(Config.WeaponsBuy) do
-                    if GetHashKey(wb.hash) == hash then
-                        wName = wb.name break
-                    end
-                end
-                table.insert(myWeapons, { hash = hash, name = wName, value = value })
-            end
-        end
-        SendNUIMessage({ action = 'updateInventory', inventory = myWeapons })
-    end
 end)
 
 RegisterNUICallback('close', function(_, cb)
